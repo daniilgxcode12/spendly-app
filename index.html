@@ -1,2098 +1,778 @@
 <!DOCTYPE html>
-<html lang="ru" class="dark">
+<html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Spendly — Умные финансы в Telegram</title>
-
-  <!-- Официальный Telegram WebApp SDK -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>EloCoach — CS2 FACEIT Аналитика</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #0c0e13;
+      --card: #151922;
+      --card-2: #1d222f;
+      --text: #f3f5f8;
+      --muted: #8b94a7;
+      --accent: #ff5500;
+      --green: #22c55e;
+      --red: #ef4444;
+      --gold: #f59e0b;
+      --border: rgba(255, 255, 255, 0.08);
+    }
 
-  <!-- Шрифт Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    button:focus, input:focus { outline: none; }
 
-  <!-- Tailwind CSS CDN и фирменная тёмная палитра Telegram -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-          },
-          colors: {
-            tg: {
-              bg: '#0e1621',
-              card: '#17212b',
-              elevated: '#1f2c3a',
-              border: '#24303f',
-              blue: '#2AABEE',
-              blueHover: '#229ED9',
-              star: '#F5A623',
-              starLight: '#FFD166',
-              green: '#34C759',
-              red: '#FF453A',
-              muted: '#8b9bb0',
-            }
-          }
-        }
-      }
-    };
-  </script>
+    body {
+      margin: 0;
+      padding: 14px 14px 92px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .brand {
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .brand span { color: var(--accent); }
+
+    .badge {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--card-2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .badge.pro {
+      background: rgba(245, 158, 11, 0.16);
+      color: var(--gold);
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 12px;
+    }
+
+    .label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 13px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card-2);
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px 14px;
+      border: none;
+      border-radius: 12px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn:active { opacity: 0.85; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn.compact { width: auto; white-space: nowrap; padding: 0 16px; }
+    .btn.secondary { background: var(--card-2); color: var(--text); border: 1px solid var(--border); }
+    .btn.gold { background: linear-gradient(135deg, #f59e0b, #ff5500); color: #111; }
+
+    .profile-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      object-fit: cover;
+      background: var(--card-2);
+      border: 1px solid var(--border);
+    }
+
+    .nick { font-size: 18px; font-weight: 800; }
+    .elo-line { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+    .lvl-pill {
+      margin-left: auto;
+      min-width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 17px;
+      border: 2px solid var(--accent);
+      background: rgba(255, 85, 0, 0.14);
+      color: #ff8c52;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .kpi {
+      background: var(--card-2);
+      border-radius: 12px;
+      padding: 10px 6px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+
+    .kpi-val { font-size: 16px; font-weight: 800; }
+    .kpi-lbl { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+    .score-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, rgba(255, 85, 0, 0.15), rgba(245, 158, 11, 0.08));
+      border: 1px solid rgba(255, 85, 0, 0.35);
+      border-radius: 14px;
+      padding: 12px 14px;
+    }
+
+    .score-num { font-size: 26px; font-weight: 900; color: #ff7a33; }
+
+    .match-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+    }
+
+    .match-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+    .wl {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .wl.win { background: rgba(34, 197, 94, 0.18); color: var(--green); }
+    .wl.loss { background: rgba(239, 68, 68, 0.18); color: var(--red); }
+
+    .m-main { flex: 1; min-width: 0; }
+    .m-map { font-size: 14px; font-weight: 700; }
+    .m-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .m-stats { text-align: right; font-size: 13px; font-weight: 700; white-space: nowrap; }
+
+    .mistake {
+      background: var(--card-2);
+      border-radius: 13px;
+      padding: 13px;
+      margin-bottom: 10px;
+      border-left: 4px solid var(--accent);
+    }
+
+    .mistake.high { border-left-color: var(--red); }
+    .mistake.medium { border-left-color: var(--gold); }
+    .mistake.low { border-left-color: var(--green); }
+
+    .mistake-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .mistake-metric { font-size: 12px; color: var(--gold); font-weight: 600; margin-bottom: 6px; }
+    .mistake-tip { font-size: 13px; color: #d5dbe6; line-height: 1.45; }
+
+    .lock-box {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px dashed rgba(245, 158, 11, 0.45);
+      border-radius: 14px;
+      padding: 14px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .map-row {
+      margin-bottom: 12px;
+    }
+
+    .map-row:last-child { margin-bottom: 0; }
+
+    .map-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .bar-bg {
+      height: 8px;
+      border-radius: 999px;
+      background: var(--card-2);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--green);
+    }
+
+    .bar-fill.bad { background: var(--red); }
+    .bar-fill.mid { background: var(--gold); }
+
+    .plan-card {
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 13px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .plan-card.featured {
+      border-color: rgba(245, 158, 11, 0.55);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    .note { font-size: 13px; color: var(--muted); line-height: 1.45; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .hidden { display: none; }
+
+    .nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      background: #11141c;
+      border-top: 1px solid var(--border);
+      padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+      z-index: 20;
+    }
+
+    .nav button {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 4px 2px;
+      cursor: pointer;
+    }
+
+    .nav button span.icon { font-size: 18px; line-height: 1.1; }
+    .nav button.active { color: var(--accent); }
+
+    .toast {
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: 84px;
+      background: #232836;
+      color: #fff;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      text-align: center;
+      display: none;
+      z-index: 30;
+    }
+  </style>
 </head>
-<body class="bg-[#080d14] text-white font-sans antialiased selection:bg-tg-blue/30 selection:text-white min-h-screen sm:flex sm:items-center sm:justify-center sm:p-4 overflow-x-hidden">
-
-  <!--
-    Основной контейнер Mini App:
-    - На мобильных и внутри Telegram занимает 100% экрана без рамок.
-    - На десктопе центрируется в аккуратном корпусе смартфона.
-  -->
-  <div id="app-frame" class="relative w-full h-[100dvh] sm:max-w-[430px] sm:h-[860px] sm:max-h-[94vh] bg-tg-bg sm:rounded-[2.25rem] sm:border sm:border-tg-border sm:shadow-[0_24px_80px_rgba(0,0,0,0.75)] flex flex-col overflow-hidden">
-
-    <!-- Плашка предпросмотра вне Telegram (автоматически скрывается внутри TG) -->
-    <div id="desktop-tg-bar" class="hidden shrink-0 bg-[#131d29] border-b border-tg-border px-4 py-2 flex items-center justify-between text-xs">
-      <div class="flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-tg-green animate-pulse"></span>
-        <span class="font-semibold text-white tracking-tight">Spendly Mini App</span>
-        <span class="px-1.5 py-0.5 rounded-md bg-tg-blue/15 text-tg-blue font-medium text-[10px]">Превью браузера</span>
-      </div>
-      <span class="text-tg-muted text-[11px]">@SpendlyFinanceBot</span>
-    </div>
-
-    <!-- Всплывающие Toast-уведомления (замена alert/confirm + Undo при удалении) -->
-    <div id="toast-container" class="pointer-events-none fixed sm:absolute top-4 left-4 right-4 z-50 flex flex-col items-center gap-2"></div>
-
-    <!-- Прокручиваемая рабочая область -->
-    <main id="main-scroll" class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden pb-6">
-
-      <!-- =================================================================== -->
-      <!-- ВКЛАДКА 1: ГЛАВНАЯ                                                  -->
-      <!-- =================================================================== -->
-      <section id="tab-home" class="px-4 pt-4 space-y-4">
-
-        <!-- Шапка с логотипом Spendly и бейджем статуса (Free / Pro ⭐) -->
-        <header class="flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <!-- Логотип Spendly -->
-            <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-tg-blue via-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-tg-blue/25 shrink-0">
-              <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2v20"/>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-              </svg>
-            </div>
-            <div class="min-w-0">
-              <div class="flex items-center gap-1.5">
-                <h1 class="text-lg font-extrabold tracking-tight text-white leading-none">Spendly</h1>
-              </div>
-              <p id="user-greeting" class="text-xs text-tg-muted truncate mt-1">Привет, Алекс</p>
-            </div>
-          </div>
-
-          <!-- Бейдж тарифа (кликабельный, ведёт во вкладку Pro ⭐) -->
-          <button
-            id="header-status-btn"
-            type="button"
-            onclick="switchTab('pro')"
-            class="shrink-0 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition active:scale-95 bg-tg-card border border-tg-border hover:border-tg-star/50"
-          >
-            <span id="header-status-dot" class="w-2 h-2 rounded-full bg-tg-muted"></span>
-            <span id="header-status-label">Free</span>
-          </button>
-        </header>
-
-        <!-- Карточка месячного бюджета -->
-        <div class="bg-tg-card border border-tg-border rounded-2xl p-4 shadow-sm relative overflow-hidden">
-          <div class="flex items-start justify-between gap-2 mb-3">
-            <div>
-              <p class="text-xs text-tg-muted font-medium mb-1">Потрачено в этом месяце</p>
-              <div class="flex items-baseline gap-2 flex-wrap">
-                <span id="total-spent-display" class="text-3xl font-extrabold tracking-tight text-white">0 ₽</span>
-                <span id="budget-limit-display" class="text-xs text-tg-muted font-medium">из 50 000 ₽</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onclick="openBudgetModal()"
-              aria-label="Изменить лимит бюджета"
-              title="Изменить лимит"
-              class="px-2.5 py-2 rounded-xl bg-tg-elevated hover:bg-tg-border text-xs font-semibold text-tg-muted hover:text-white flex items-center gap-1.5 transition active:scale-95"
-            >
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 20h9"/>
-                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-              </svg>
-              Лимит
-            </button>
-          </div>
-
-          <!-- Прогресс-бар бюджета -->
-          <div class="w-full h-2.5 bg-tg-bg rounded-full overflow-hidden mb-2">
-            <div id="budget-progress-bar" class="h-full rounded-full bg-tg-green transition-all duration-500 ease-out" style="width: 0%;"></div>
-          </div>
-
-          <div class="flex items-center justify-between text-xs">
-            <span id="budget-status-text" class="text-tg-muted">Осталось 50 000 ₽</span>
-            <span id="budget-percent-text" class="font-bold text-tg-green">0%</span>
-          </div>
-        </div>
-
-        <!-- Умный быстрый ввод трат в одну строку + быстрые чипы категорий -->
-        <div class="bg-tg-card border border-tg-border rounded-2xl p-3.5 space-y-3">
-          <div class="flex items-center justify-between gap-2">
-            <label for="smart-input" class="text-xs font-bold text-white flex items-center gap-1.5">
-              <svg class="w-4 h-4 text-tg-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-              </svg>
-              Быстрый ввод в одну строку
-            </label>
-            <button type="button" onclick="openExpenseModal()" class="text-[11px] font-semibold text-tg-blue hover:text-tg-blueHover transition">
-              + Вручную
-            </button>
-          </div>
-
-          <form id="smart-input-form" class="flex items-center gap-2">
-            <input
-              id="smart-input"
-              type="text"
-              autocomplete="off"
-              placeholder="Кофе 350, Такси 600, Пятерочка 1240..."
-              class="flex-1 min-w-0 bg-tg-bg border border-tg-border focus:border-tg-blue rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-tg-muted/65 outline-none transition"
-            />
-            <button
-              type="submit"
-              aria-label="Добавить трату"
-              class="shrink-0 w-11 h-11 rounded-xl bg-tg-blue hover:bg-tg-blueHover text-white flex items-center justify-center shadow-md shadow-tg-blue/25 transition active:scale-95"
-            >
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12h14"/>
-                <path d="m12 5 7 7-7 7"/>
-              </svg>
-            </button>
-          </form>
-
-          <!-- Живой предпросмотр распознанной траты -->
-          <div id="smart-preview" class="hidden items-center justify-between bg-tg-bg/90 border border-tg-blue/35 rounded-xl px-3 py-2 text-xs">
-            <div class="flex items-center gap-2 min-w-0">
-              <span class="text-tg-muted shrink-0">Запишем:</span>
-              <span id="smart-preview-text" class="font-semibold text-white truncate"></span>
-            </div>
-            <span id="smart-preview-cat" class="shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-semibold"></span>
-          </div>
-
-          <!-- Быстрые чипы выбора категории -->
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] text-tg-muted">Категория (авто или выбери вручную):</span>
-              <button id="clear-cat-chip-btn" type="button" onclick="selectQuickCategory(null)" class="hidden text-[11px] font-semibold text-tg-blue">
-                Сбросить на Авто
-              </button>
-            </div>
-            <div id="quick-category-chips" class="flex flex-wrap gap-1.5"></div>
-          </div>
-        </div>
-
-        <!-- Список недавних трат -->
-        <div class="space-y-2.5">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-bold text-white">Недавние траты</h2>
-            <span id="tx-count-badge" class="text-xs text-tg-muted">0 операций</span>
-          </div>
-          <div id="transactions-list" class="space-y-2"></div>
-        </div>
-      </section>
-
-      <!-- =================================================================== -->
-      <!-- ВКЛАДКА 2: АНАЛИТИКА                                                -->
-      <!-- =================================================================== -->
-      <section id="tab-analytics" class="hidden px-4 pt-4 space-y-4">
-        <header class="flex items-center justify-between gap-2">
-          <div>
-            <h1 class="text-xl font-extrabold tracking-tight">Аналитика</h1>
-            <p class="text-xs text-tg-muted">Распределение трат по категориям</p>
-          </div>
-          <span id="analytics-total-pill" class="px-3 py-1.5 rounded-xl bg-tg-card border border-tg-border text-xs font-extrabold text-white">0 ₽</span>
-        </header>
-
-        <!-- Интерактивная кольцевая SVG-диаграмма (Donut Chart) -->
-        <div class="bg-tg-card border border-tg-border rounded-2xl p-5 flex flex-col items-center">
-          <div class="relative w-52 h-52 flex items-center justify-center">
-            <svg id="donut-svg" viewBox="0 0 180 180" class="w-full h-full -rotate-90 overflow-visible">
-              <circle cx="90" cy="90" r="68" fill="none" stroke="#1f2c3a" stroke-width="18"></circle>
-              <g id="donut-segments"></g>
-            </svg>
-            <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-6 pointer-events-none">
-              <span id="donut-center-label" class="text-[11px] font-medium text-tg-muted truncate max-w-full">Всего за месяц</span>
-              <span id="donut-center-value" class="text-xl font-extrabold text-white mt-0.5">0 ₽</span>
-              <span id="donut-center-sub" class="text-[11px] font-bold text-tg-blue mt-0.5">100%</span>
-            </div>
-          </div>
-          <p class="text-[11px] text-tg-muted mt-3">Нажми на сегмент диаграммы или категорию ниже</p>
-        </div>
-
-        <!-- Детальный список категорий с полосками прогресса -->
-        <div class="bg-tg-card border border-tg-border rounded-2xl p-4 space-y-2.5">
-          <h2 class="text-sm font-bold text-white">Категории расходов</h2>
-          <div id="analytics-breakdown" class="space-y-2"></div>
-        </div>
-
-        <!-- Блок «AI-советник и экспорт в Excel (.CSV)» -->
-        <div id="ai-pro-section" class="bg-tg-card border border-tg-border rounded-2xl p-4 relative overflow-hidden"></div>
-      </section>
-
-      <!-- =================================================================== -->
-      <!-- ВКЛАДКА 3: ПОДПИСКИ И СПЛИТ (ПЕРЕКЛЮЧАТЕЛЬ ВНУТРИ)                  -->
-      <!-- =================================================================== -->
-      <section id="tab-social" class="hidden px-4 pt-4 space-y-4">
-        <header>
-          <h1 class="text-xl font-extrabold tracking-tight">Подписки и Сплит</h1>
-          <p class="text-xs text-tg-muted">Регулярные списания и общие счета с друзьями</p>
-        </header>
-
-        <!-- Сегментированный переключатель: Подписки | Разделить чек -->
-        <div class="bg-tg-card border border-tg-border rounded-2xl p-1 grid grid-cols-2 gap-1">
-          <button
-            id="subtab-btn-subs"
-            type="button"
-            onclick="switchSocialSubtab('subs')"
-            class="py-2.5 px-3 rounded-xl text-xs font-bold transition bg-tg-blue text-white shadow-sm"
-          >
-            Подписки
-          </button>
-          <button
-            id="subtab-btn-split"
-            type="button"
-            onclick="switchSocialSubtab('split')"
-            class="py-2.5 px-3 rounded-xl text-xs font-bold transition text-tg-muted hover:text-white"
-          >
-            Разделить чек
-          </button>
-        </div>
-
-        <!-- ПОДВКЛАДКА А: ТРЕКЕР ПОДПИСОК -->
-        <div id="social-panel-subs" class="space-y-3.5">
-          <!-- Сводка по подпискам -->
-          <div class="bg-tg-card border border-tg-border rounded-2xl p-4 flex items-center justify-between gap-3">
-            <div>
-              <p class="text-xs text-tg-muted">Ежемесячные подписки</p>
-              <p id="subs-monthly-total" class="text-2xl font-extrabold text-white mt-0.5">0 ₽</p>
-              <p class="text-[11px] text-tg-muted mt-0.5">
-                В год: <span id="subs-yearly-total" class="text-white/90 font-semibold">0 ₽</span>
-                <span id="subs-limit-hint" class="ml-1.5 text-tg-star"></span>
-              </p>
-            </div>
-            <button
-              type="button"
-              onclick="openSubModal()"
-              class="shrink-0 px-3.5 py-2.5 rounded-xl bg-tg-blue hover:bg-tg-blueHover text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-tg-blue/25 transition active:scale-95"
-            >
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                <path d="M12 5v14M5 12h14"/>
-              </svg>
-              Добавить
-            </button>
-          </div>
-
-          <!-- Список подписок -->
-          <div id="subscriptions-list" class="space-y-2"></div>
-        </div>
-
-        <!-- ПОДВКЛАДКА Б: ВИРАЛЬНЫЙ КАЛЬКУЛЯТОР «РАЗДЕЛИТЬ ЧЕК» -->
-        <div id="social-panel-split" class="hidden space-y-4">
-          <div class="bg-tg-card border border-tg-border rounded-2xl p-4 space-y-4">
-            <!-- Название события -->
-            <div>
-              <label for="split-desc" class="block text-xs text-tg-muted mb-1">Название события</label>
-              <input
-                id="split-desc"
-                type="text"
-                value="Ужин в баре"
-                placeholder="Ужин в баре, Пицца, Такси..."
-                oninput="updateBillSplit()"
-                class="w-full bg-tg-bg border border-tg-border focus:border-tg-blue rounded-xl px-3.5 py-2.5 text-sm text-white outline-none transition"
-              />
-            </div>
-
-            <!-- Сумма чека и количество человек -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label for="split-amount" class="block text-xs text-tg-muted mb-1">Сумма чека (₽)</label>
-                <input
-                  id="split-amount"
-                  type="number"
-                  inputmode="decimal"
-                  min="0"
-                  value="4200"
-                  placeholder="4200"
-                  oninput="updateBillSplit()"
-                  class="w-full bg-tg-bg border border-tg-border focus:border-tg-blue rounded-xl px-3.5 py-2.5 text-base font-extrabold text-white outline-none transition"
-                />
-              </div>
-
-              <div>
-                <label class="block text-xs text-tg-muted mb-1">Количество человек</label>
-                <div class="flex items-center justify-between bg-tg-bg border border-tg-border rounded-xl p-1">
-                  <button type="button" onclick="changeSplitPeople(-1)" class="w-9 h-9 rounded-lg bg-tg-elevated hover:bg-tg-border text-white font-bold flex items-center justify-center active:scale-95 transition">−</button>
-                  <span id="split-people-count" class="text-base font-extrabold text-white px-3">3</span>
-                  <button type="button" onclick="changeSplitPeople(1)" class="w-9 h-9 rounded-lg bg-tg-elevated hover:bg-tg-border text-white font-bold flex items-center justify-center active:scale-95 transition">+</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Выбор чаевых (0% / 5% / 10% / 15%) -->
-            <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="text-xs text-tg-muted">Чаевые</label>
-                <span id="split-tip-rub" class="text-xs font-semibold text-tg-blue">+0 ₽</span>
-              </div>
-              <div id="tip-buttons" class="grid grid-cols-4 gap-2"></div>
-            </div>
-
-            <!-- Итоговый расчёт -->
-            <div class="bg-gradient-to-r from-tg-blue/15 via-tg-bg to-tg-green/10 border border-tg-blue/35 rounded-2xl p-4">
-              <div class="flex items-center justify-between text-xs text-tg-muted mb-1">
-                <span>Итого с чаевыми:</span>
-                <span id="split-grand-total" class="font-bold text-white">4 200 ₽</span>
-              </div>
-              <div class="flex items-baseline justify-between gap-2 pt-2 border-t border-tg-border/70">
-                <span class="text-xs font-semibold text-tg-muted">С каждого по:</span>
-                <span id="split-per-person" class="text-2xl font-extrabold text-white">1 400 ₽</span>
-              </div>
-            </div>
-
-            <!-- Кнопки отправки в Telegram и копирования -->
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                onclick="shareBillToTelegram()"
-                class="flex-1 py-3.5 px-4 rounded-xl bg-tg-blue hover:bg-tg-blueHover text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-tg-blue/25 transition active:scale-95"
-              >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M21.9 4.2c.2-.9-.6-1.6-1.5-1.3L2.7 9.7c-1 .4-1 1.8 0 2.1l4.5 1.5 1.7 5.4c.2.8 1.2 1 1.8.4l2.5-2.5 4.7 3.5c.8.6 1.9.1 2.1-.8l1.9-15.1zM9.8 13.7l8.2-6.7-6.3 7.7-.3 2.8-1.1-3.5-.5-.3z"/>
-                </svg>
-                Отправить счёт в Telegram
-              </button>
-              <button
-                type="button"
-                onclick="copyBillShareText()"
-                aria-label="Скопировать текст счёта"
-                title="Скопировать текст"
-                class="p-3.5 rounded-xl bg-tg-elevated hover:bg-tg-border text-tg-muted hover:text-white transition active:scale-95"
-              >
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- =================================================================== -->
-      <!-- ВКЛАДКА 4: PRO ⭐ (ОБНОВЛЁННАЯ ТАРИФНАЯ СЕТКА TELEGRAM STARS)       -->
-      <!-- =================================================================== -->
-      <section id="tab-pro" class="hidden px-4 pt-4 space-y-4">
-
-        <!-- Hero Spendly Pro -->
-        <div class="relative rounded-2xl bg-gradient-to-b from-tg-star/20 via-tg-card to-tg-card border border-tg-star/30 p-5 text-center overflow-hidden">
-          <div id="pro-star-badge" class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-[#FFD166] to-[#F5A623] flex items-center justify-center shadow-xl shadow-tg-star/30 transition-transform duration-500">
-            <svg class="w-9 h-9 text-[#1a1204]" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z"/>
-            </svg>
-          </div>
-          <h1 class="text-2xl font-extrabold tracking-tight text-white">Spendly Pro ⭐</h1>
-          <p class="text-xs text-tg-muted mt-1 max-w-[290px] mx-auto">
-            Моментальная подписка за Telegram Stars без привязки банковских карт.
-          </p>
-
-          <!-- Баннер активной подписки Pro с кнопкой сброса для теста -->
-          <div id="pro-active-banner" class="hidden mt-4 bg-tg-green/15 border border-tg-green/40 rounded-xl p-3.5 text-left">
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <span class="w-7 h-7 rounded-full bg-tg-green text-tg-bg flex items-center justify-center font-extrabold text-xs shrink-0">✓</span>
-                <div class="min-w-0">
-                  <p class="text-xs font-extrabold text-white truncate">Pro-доступ активирован</p>
-                  <p id="pro-active-meta" class="text-[11px] text-tg-green truncate">Тариф: 3 месяца • Все функции открыты</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onclick="resetDemoPro()"
-                class="shrink-0 px-2.5 py-1.5 rounded-lg bg-tg-bg/80 border border-tg-border text-[11px] font-semibold text-tg-muted hover:text-white transition active:scale-95"
-              >
-                Сбросить Pro
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Список преимуществ Spendly Pro -->
-        <div class="bg-tg-card border border-tg-border rounded-2xl p-4 space-y-2.5">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-tg-muted">Что даёт Spendly Pro</h2>
-          <ul class="space-y-2.5 text-xs">
-            <li class="flex items-start gap-2.5">
-              <span class="w-6 h-6 rounded-lg bg-tg-star/15 text-tg-star flex items-center justify-center shrink-0">✦</span>
-              <div>
-                <p class="font-bold text-white">AI-советник по экономии</p>
-                <p class="text-[11px] text-tg-muted">Персональный разбор реальных трат и прогноз бюджета</p>
-              </div>
-            </li>
-            <li class="flex items-start gap-2.5">
-              <span class="w-6 h-6 rounded-lg bg-tg-green/15 text-tg-green flex items-center justify-center shrink-0">↓</span>
-              <div>
-                <p class="font-bold text-white">Экспорт в Excel (.CSV)</p>
-                <p class="text-[11px] text-tg-muted">Выгрузка всей истории операций в один клик</p>
-              </div>
-            </li>
-            <li class="flex items-start gap-2.5">
-              <span class="w-6 h-6 rounded-lg bg-tg-blue/15 text-tg-blue flex items-center justify-center shrink-0">∞</span>
-              <div>
-                <p class="font-bold text-white">Безлимит подписок и счетов</p>
-                <p class="text-[11px] text-tg-muted">Отслеживай любое количество сервисов без ограничений</p>
-              </div>
-            </li>
-            <li class="flex items-start gap-2.5">
-              <span class="w-6 h-6 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center shrink-0">⚡</span>
-              <div>
-                <p class="font-bold text-white">Приоритетные фичи</p>
-                <p class="text-[11px] text-tg-muted">Ранний доступ к умным уведомлениям и семейным бюджетам</p>
-              </div>
-            </li>
-          </ul>
-        </div>
-
-        <!-- 3 интерактивные карточки тарифов (по умолчанию выбран 3 месяца) -->
-        <div id="pro-plans-container" class="space-y-2.5"></div>
-
-        <!-- Динамическая главная кнопка оплаты -->
-        <button
-          id="pro-cta-btn"
-          type="button"
-          onclick="initiateStarsPayment()"
-          class="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-[#F5A623] via-[#FFB833] to-[#F5A623] hover:brightness-110 text-[#1a1204] font-extrabold text-base shadow-xl shadow-tg-star/25 flex items-center justify-center gap-2 transition active:scale-[0.98]"
-        >
-          <span id="pro-cta-text">Оплатить 100 ⭐</span>
-        </button>
-
-        <p class="text-[11px] text-center text-tg-muted px-2 pb-2 leading-relaxed">
-          Безопасная оплата через встроенный механизм Telegram Stars (XTR). В браузере доступна интерактивная симуляция оплаты.
-        </p>
-      </section>
-
-    </main>
-
-    <!-- ===================================================================== -->
-    <!-- ПЛАВНАЯ НИЖНЯЯ НАВИГАЦИЯ (4 ВКЛАДКИ)                                  -->
-    <!-- ===================================================================== -->
-    <nav class="shrink-0 bg-tg-card/95 backdrop-blur-md border-t border-tg-border px-2 pt-2 pb-3 sm:pb-3.5 grid grid-cols-4 gap-1 z-30">
-      <button type="button" data-tab="home" onclick="switchTab('home')" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl transition active:scale-95 text-tg-blue">
-        <svg class="w-5 h-5 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
-        <span class="text-[11px] font-semibold">Главная</span>
-      </button>
-
-      <button type="button" data-tab="analytics" onclick="switchTab('analytics')" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl transition active:scale-95 text-tg-muted">
-        <svg class="w-5 h-5 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
-          <path d="M22 12A10 10 0 0 0 12 2v10z"/>
-        </svg>
-        <span class="text-[11px] font-semibold">Аналитика</span>
-      </button>
-
-      <button type="button" data-tab="social" onclick="switchTab('social')" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl transition active:scale-95 text-tg-muted">
-        <svg class="w-5 h-5 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect width="20" height="14" x="2" y="5" rx="2"/>
-          <line x1="2" x2="22" y1="10" y2="10"/>
-        </svg>
-        <span class="text-[11px] font-semibold">Сплит</span>
-      </button>
-
-      <button type="button" data-tab="pro" onclick="switchTab('pro')" class="nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl transition active:scale-95 text-tg-muted">
-        <svg class="w-5 h-5 mb-1 text-tg-star" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z"/>
-        </svg>
-        <span class="text-[11px] font-semibold">Pro ⭐</span>
-      </button>
-    </nav>
-
-    <!-- ===================================================================== -->
-    <!-- МОДАЛКА: ДОБАВИТЬ РАСХОД ВРУЧНУЮ                                      -->
-    <!-- ===================================================================== -->
-    <div id="expense-modal" class="hidden fixed sm:absolute inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-end justify-center">
-      <div class="w-full bg-tg-card border-t border-tg-border rounded-t-3xl p-5 space-y-4 shadow-2xl">
-        <div class="w-10 h-1 bg-tg-border rounded-full mx-auto -mt-1"></div>
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-bold text-white">Новый расход</h3>
-          <button type="button" onclick="closeModal('expense-modal')" class="p-1.5 rounded-lg text-tg-muted hover:text-white">✕</button>
-        </div>
-
-        <form id="manual-expense-form" class="space-y-3.5">
-          <div>
-            <label for="exp-amount" class="block text-xs text-tg-muted mb-1">Сумма (₽)</label>
-            <input id="exp-amount" type="number" inputmode="decimal" min="1" required placeholder="0" class="w-full bg-tg-bg border border-tg-border focus:border-tg-blue rounded-xl px-4 py-3 text-2xl font-extrabold text-white outline-none" />
-          </div>
-
-          <div>
-            <label for="exp-title" class="block text-xs text-tg-muted mb-1">Название</label>
-            <input id="exp-title" type="text" required placeholder="Например: Обед в кафе" class="w-full bg-tg-bg border border-tg-border focus:border-tg-blue rounded-xl px-3.5 py-2.5 text-sm text-white outline-none" />
-          </div>
-
-          <div>
-            <label class="block text-xs text-tg-muted mb-2">Категория</label>
-            <div id="modal-category-grid" class="grid grid-cols-3 gap-2"></div>
-          </div>
-
-          <button type="submit" class="w-full py-3.5 rounded-xl bg-tg-blue hover:bg-tg-blueHover text-white font-bold text-sm shadow-lg shadow-tg-blue/25 transition active:scale-[0.98]">
-            Сохранить расход
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- ===================================================================== -->
-    <!-- МОДАЛКА: ИЗМЕНИТЬ ЛИМИТ БЮДЖЕТА                                       -->
-    <!-- ===================================================================== -->
-    <div id="budget-modal" class="hidden fixed sm:absolute inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-end justify-center">
-      <div class="w-full bg-tg-card border-t border-tg-border rounded-t-3xl p-5 space-y-4 shadow-2xl">
-        <div class="w-10 h-1 bg-tg-border rounded-full mx-auto -mt-1"></div>
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-bold text-white">Месячный лимит бюджета</h3>
-          <button type="button" onclick="closeModal('budget-modal')" class="p-1.5 rounded-lg text-tg-muted hover:text-white">✕</button>
-        </div>
-
-        <form id="budget-form" class="space-y-3.5">
-          <div>
-            <label for="budget-input" class="block text-xs text-tg-muted mb-1">Лимит на месяц (₽)</label>
-            <input id="budget-input" type="number" inputmode="numeric" min="1000" required class="w-full bg-tg-bg border border-tg-border focus:border-tg-blue rounded-xl px-4 py-3 text-xl font-extrabold text-white outline-none" />
-          </div>
-
-          <div class="grid grid-cols-3 gap-2">
-            <button type="button" onclick="setBudgetPreset(30000)" class="py-2 rounded-xl bg-tg-elevated hover:bg-tg-border text-xs font-semibold text-white transition">30 000 ₽</button>
-            <button type="button" onclick="setBudgetPreset(50000)" class="py-2 rounded-xl bg-tg-elevated hover:bg-tg-border text-xs font-semibold text-white transition">50 000 ₽</button>
-            <button type="button" onclick="setBudgetPreset(100000)" class="py-2 rounded-xl bg-tg-elevated hover:bg-tg-border text-xs font-semibold text-white transition">100 000 ₽</button>
-          </div>
-
-          <button type="submit" class="w-full py-3.5 rounded-xl bg-tg-blue hover:bg-tg-blueHover text-white font-bold text-sm transition active:scale-[0.98]">
-            Обновить лимит
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- ===================================================================== -->
-    <!-- МОДАЛКА: ДОБАВИТЬ ПОДПИСКУ                                            -->
-    <!-- ===================================================================== -->
-    <div id="sub-modal" class="hidden fixed sm:absolute inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-end justify-center">
-      <div class="w-full bg-tg-card border-t border-tg-border rounded-t-3xl p-5 space-y-4 shadow-2xl">
-        <div class="w-10 h-1 bg-tg-border rounded-full mx-auto -mt-1"></div>
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-bold text-white">Новая подписка</h3>
-          <button type="button" onclick="closeModal('sub-modal')" class="p-1.5 rounded-lg text-tg-muted hover:text-white">✕</button>
-        </div>
-
-        <div class="flex flex-wrap gap-1.5">
-          <button type="button" onclick="fillSubPreset('Кинопоиск', 399, 10)" class="px-2.5 py-1.5 rounded-lg bg-tg-elevated hover:bg-tg-border text-xs text-white transition">Кинопоиск • 399 ₽</button>
-          <button type="button" onclick="fillSubPreset('VK Музыка', 199, 15)" class="px-2.5 py-1.5 rounded-lg bg-tg-elevated hover:bg-tg-border text-xs text-white transition">VK Музыка • 199 ₽</button>
-          <button type="button" onclick="fillSubPreset('iCloud+', 149, 7)" class="px-2.5 py-1.5 rounded-lg bg-tg-elevated hover:bg-tg-border text-xs text-white transition">iCloud+ • 149 ₽</button>
-        </div>
-
-        <form id="sub-form" class="space-y-3">
-          <div>
-            <label for="sub-name" class="block text-xs text-tg-muted mb-1">Сервис</label>
-            <input id="sub-name" type="text" required placeholder="Например: YouTube Premium" class="w-full bg-tg-bg border border-tg-border focus:border-tg-blue rounded-xl px-3.5 py-2.5 text-sm text-white outline-none" />
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label for="sub-price" class="block text-xs text-tg-muted mb-1">Цена в месяц (₽)</label>
-              <input id="sub-price" type="number" inputmode="numeric" min="1" required placeholder="399" class="w-full bg-tg-bg border border-tg-border focus:border-tg-blue rounded-xl px-3.5 py-2.5 text-sm font-bold text-white outline-none" />
-            </div>
-            <div>
-              <label for="sub-days" class="block text-xs text-tg-muted mb-1">Списание через (дн.)</label>
-              <input id="sub-days" type="number" inputmode="numeric" min="1" max="31" required value="14" class="w-full bg-tg-bg border border-tg-border focus:border-tg-blue rounded-xl px-3.5 py-2.5 text-sm font-bold text-white outline-none" />
-            </div>
-          </div>
-
-          <button type="submit" class="w-full py-3.5 rounded-xl bg-tg-blue hover:bg-tg-blueHover text-white font-bold text-sm transition active:scale-[0.98]">
-            Добавить подписку
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- ===================================================================== -->
-    <!-- РЕАЛИСТИЧНЫЙ BOTTOM-SHEET ОПЛАТЫ TELEGRAM STARS (ФОЛБЭК В БРАУЗЕРЕ)   -->
-    <!-- ===================================================================== -->
-    <div id="stars-sheet" class="hidden fixed sm:absolute inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end justify-center">
-      <div class="w-full bg-[#17212b] border-t border-tg-border rounded-t-3xl p-5 space-y-4 shadow-2xl">
-        <div class="w-10 h-1 bg-tg-border rounded-full mx-auto -mt-1"></div>
-
-        <!-- Верхняя строка имитации нативного экрана Telegram Stars -->
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded-md bg-tg-star/15 text-tg-star text-[11px] font-bold">Telegram Stars</span>
-            <span class="text-xs text-tg-muted">Ваш баланс: <strong id="demo-stars-balance" class="text-white">1 200 ⭐</strong></span>
-          </div>
-          <button type="button" onclick="closeModal('stars-sheet')" class="p-1.5 rounded-lg text-tg-muted hover:text-white">✕</button>
-        </div>
-
-        <!-- Карточка выбранного тарифа -->
-        <div class="bg-tg-bg border border-tg-border rounded-2xl p-4 flex items-center gap-3.5">
-          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FFD166] to-[#F5A623] flex items-center justify-center shrink-0 shadow-lg shadow-tg-star/25">
-            <svg class="w-7 h-7 text-[#1a1204]" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z"/>
-            </svg>
-          </div>
-          <div class="min-w-0 flex-1">
-            <h4 id="stars-sheet-title" class="text-sm font-bold text-white truncate">Spendly Pro — 3 месяца</h4>
-            <p id="stars-sheet-sub" class="text-xs text-tg-muted truncate">@SpendlyFinanceBot • ~33 ⭐ / мес</p>
-          </div>
-          <div class="text-right shrink-0">
-            <span id="stars-sheet-price" class="text-lg font-extrabold text-tg-star">100 ⭐</span>
-          </div>
-        </div>
-
-        <p class="text-[11px] text-tg-muted text-center leading-relaxed">
-          Режим тестирования в браузере. Внутри Telegram при подключённом сервере здесь откроется нативный инвойс <code class="text-tg-blue">tg.openInvoice()</code>.
-        </p>
-
-        <button
-          id="stars-confirm-btn"
-          type="button"
-          onclick="confirmDemoStarsPayment()"
-          class="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#F5A623] to-[#FFB833] text-[#1a1204] font-extrabold text-sm shadow-lg shadow-tg-star/25 flex items-center justify-center gap-2 transition active:scale-[0.98]"
-        >
-          <span id="stars-confirm-label">Подтвердить оплату ⭐</span>
-        </button>
-      </div>
-    </div>
-
+<body>
+  <div class="header">
+    <div class="brand">Elo<span>Coach</span> CS2</div>
+    <div id="proBadge" class="badge">Free</div>
   </div>
 
-  <!-- ======================================================================= -->
-  <!-- ОСНОВНАЯ ЛОГИКА SPENDLY MINI APP                                        -->
-  <!-- ======================================================================= -->
-  <script>
-    /**
-     * Конфигурация бэкенда для продакшена:
-     * Укажите URL сервера (например, 'https://api.spendly.app'), который вызывает
-     * Telegram Bot API createInvoiceLink (currency: 'XTR').
-     * При пустой строке используется встроенная симуляция Telegram Stars.
-     */
-    const API_BASE_URL = '';
-    const BOT_USERNAME = 'SpendlyFinanceBot';
-    const STORAGE_KEY = 'spendly_tma_state_v2';
-
-    /**
-     * 6 категорий расходов: Еда, Транспорт, Подписки, Развлечения, Покупки, Другое.
-     */
-    const CATEGORIES = {
-      food: {
-        id: 'food',
-        name: 'Еда',
-        color: '#FF9F0A',
-        bgClass: 'bg-amber-500/15 text-amber-400',
-        keywords: ['кофе', 'обед', 'ужин', 'завтрак', 'еда', 'бургер', 'пицца', 'суши', 'продукт', 'вкусвилл', 'пятерочка', 'пятёрочка', 'магнит', 'перекресток', 'ашан', 'самокат', 'кафе', 'ресторан', 'шаурма', 'чай', 'круассан', 'хлеб', 'молоко', 'доставка', 'вкусно', 'лента', 'дикси'],
-        icon: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>`
-      },
-      transport: {
-        id: 'transport',
-        name: 'Транспорт',
-        color: '#2AABEE',
-        bgClass: 'bg-sky-500/15 text-sky-400',
-        keywords: ['такси', 'метро', 'автобус', 'бензин', 'заправка', 'проезд', 'тройка', 'каршеринг', 'поезд', 'ржд', 'парковка', 'яндекс го', 'uber', 'авиа', 'билет', 'авто', 'мойка', 'шины', 'самокат поездка'],
-        icon: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>`
-      },
-      subscriptions: {
-        id: 'subscriptions',
-        name: 'Подписки',
-        color: '#30D158',
-        bgClass: 'bg-emerald-500/15 text-emerald-400',
-        keywords: ['подписка', 'яндекс плюс', 'плюс', 'spotify', 'спотифай', 'netflix', 'кинопоиск', 'telegram premium', 'премиум', 'icloud', 'вк музыка', 'интернет', 'связь', 'vpn', 'впн', 'youtube', 'chatgpt'],
-        icon: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>`
-      },
-      entertainment: {
-        id: 'entertainment',
-        name: 'Развлечения',
-        color: '#FF375F',
-        bgClass: 'bg-rose-500/15 text-rose-400',
-        keywords: ['кино', 'imax', 'театр', 'концерт', 'игра', 'steam', 'стим', 'ps', 'клуб', 'боулинг', 'бар', 'караоке', 'музей', 'кальян', 'бильярд', 'вечеринка', 'квест'],
-        icon: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="15" x="2" y="7" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>`
-      },
-      shopping: {
-        id: 'shopping',
-        name: 'Покупки',
-        color: '#BF5AF2',
-        bgClass: 'bg-purple-500/15 text-purple-400',
-        keywords: ['озон', 'ozon', 'wb', 'вайлдберриз', 'wildberries', 'одежда', 'обувь', 'кроссовки', 'куртка', 'техника', 'телефон', 'подарок', 'косметика', 'маркет', 'магазин', 'наушники', 'книга', 'дом', 'леруа'],
-        icon: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`
-      },
-      other: {
-        id: 'other',
-        name: 'Другое',
-        color: '#8E8E93',
-        bgClass: 'bg-slate-400/15 text-slate-300',
-        keywords: ['аптека', 'врач', 'ремонт', 'жкх', 'квартира', 'аренда', 'перевод', 'штраф', 'налог', 'разное', 'прочее', 'другое'],
-        icon: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`
-      }
-    };
-
-    const CATEGORY_ORDER = ['food', 'transport', 'subscriptions', 'entertainment', 'shopping', 'other'];
-
-    /**
-     * Обновлённая тарифная сетка Spendly Pro в Telegram Stars (XTR).
-     * По умолчанию выбран тариф на 3 месяца (100 ⭐).
-     */
-    const PRO_PLANS = {
-      monthly: {
-        id: 'monthly',
-        name: '1 месяц',
-        shortBadge: '1 мес',
-        stars: 50,
-        perMonthText: '50 ⭐ / мес',
-        badge: null,
-        badgeClass: ''
-      },
-      quarterly: {
-        id: 'quarterly',
-        name: '3 месяца',
-        shortBadge: '3 мес',
-        stars: 100,
-        perMonthText: '~33 ⭐ / мес',
-        badge: 'Хит · -33%',
-        badgeClass: 'bg-gradient-to-r from-[#F5A623] to-[#FFD166] text-[#1a1204]'
-      },
-      yearly: {
-        id: 'yearly',
-        name: '1 год',
-        shortBadge: '1 год',
-        stars: 500,
-        perMonthText: '~42 ⭐ / мес',
-        badge: 'На год',
-        badgeClass: 'bg-tg-blue/20 text-tg-blue border border-tg-blue/35'
-      }
-    };
-
-    const PRO_PLAN_ORDER = ['monthly', 'quarterly', 'yearly'];
-    const TIP_OPTIONS = [0, 5, 10, 15];
-
-    // Глобальное состояние приложения
-    let state = {
-      budget: 50000,
-      isPro: false,
-      proPlan: null,
-      selectedProPlan: 'quarterly', // По умолчанию выбран тариф 3 месяца (100 ⭐)
-      transactions: [],
-      subscriptions: [],
-      activeTab: 'home',
-      socialSubtab: 'subs',
-      pinnedQuickCategory: null,
-      selectedAnalyticsCategory: null,
-      modalSelectedCategory: 'food',
-      splitPeople: 3,
-      splitTipPercent: 10,
-      demoStarsBalance: 1200
-    };
-
-    // Контекст Telegram WebApp SDK
-    let tg = null;
-    let isInsideTelegram = false;
-
-    /* ===================================================================== */
-    /* TELEGRAM WEBAPP SDK И ХРАНИЛИЩЕ LOCALSTORAGE                          */
-    /* ===================================================================== */
-
-    /**
-     * Безопасный вызов HapticFeedback внутри Telegram.
-     */
-    function triggerHaptic(type = 'light') {
-      try {
-        if (!tg?.HapticFeedback) return;
-        if (type === 'success' || type === 'error' || type === 'warning') {
-          tg.HapticFeedback.notificationOccurred(type);
-        } else {
-          tg.HapticFeedback.impactOccurred(type);
-        }
-      } catch (err) {
-        // В обычном браузере виброотклик недоступен
-      }
-    }
-
-    /**
-     * Стартовые демо-данные при первом запуске приложения.
-     */
-    function getDefaultData() {
-      const now = Date.now();
-      const hour = 3600 * 1000;
-      const day = 24 * hour;
-      return {
-        budget: 50000,
-        isPro: false,
-        proPlan: null,
-        selectedProPlan: 'quarterly',
-        transactions: [
-          { id: 'tx_1', title: 'Кофе', amount: 350, category: 'food', timestamp: now - 1.5 * hour },
-          { id: 'tx_2', title: 'Такси', amount: 600, category: 'transport', timestamp: now - 4 * hour },
-          { id: 'tx_3', title: 'Пятерочка', amount: 1240, category: 'food', timestamp: now - 1 * day - 2 * hour },
-          { id: 'tx_4', title: 'Кинотеатр IMAX', amount: 1400, category: 'entertainment', timestamp: now - 2 * day }
-        ],
-        subscriptions: [
-          { id: 'sub_1', name: 'Яндекс Плюс', price: 399, daysLeft: 4, color: '#FF9F0A' },
-          { id: 'sub_2', name: 'Telegram Premium', price: 299, daysLeft: 11, color: '#2AABEE' },
-          { id: 'sub_3', name: 'Spotify', price: 250, daysLeft: 19, color: '#34C759' }
-        ]
-      };
-    }
-
-    /**
-     * Загрузка всех данных из localStorage с валидацией.
-     */
-    function loadState() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          state.budget = Number(parsed.budget) > 0 ? Number(parsed.budget) : 50000;
-          state.isPro = Boolean(parsed.isPro);
-          state.proPlan = parsed.proPlan && PRO_PLANS[parsed.proPlan] ? parsed.proPlan : null;
-          state.selectedProPlan = parsed.selectedProPlan && PRO_PLANS[parsed.selectedProPlan]
-            ? parsed.selectedProPlan
-            : 'quarterly';
-          state.transactions = Array.isArray(parsed.transactions) ? parsed.transactions : getDefaultData().transactions;
-          state.subscriptions = Array.isArray(parsed.subscriptions) ? parsed.subscriptions : getDefaultData().subscriptions;
-          return;
-        }
-      } catch (err) {
-        console.warn('Ошибка чтения localStorage, загружены стартовые данные:', err);
-      }
-
-      const defaults = getDefaultData();
-      state.budget = defaults.budget;
-      state.isPro = defaults.isPro;
-      state.proPlan = defaults.proPlan;
-      state.selectedProPlan = defaults.selectedProPlan;
-      state.transactions = defaults.transactions;
-      state.subscriptions = defaults.subscriptions;
-      saveState();
-    }
-
-    /**
-     * Сохранение трат, лимита, подписок, статуса Pro и выбранного тарифа в localStorage.
-     */
-    function saveState() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-          budget: state.budget,
-          isPro: state.isPro,
-          proPlan: state.proPlan,
-          selectedProPlan: state.selectedProPlan,
-          transactions: state.transactions,
-          subscriptions: state.subscriptions
-        }));
-      } catch (err) {
-        console.warn('Не удалось сохранить данные в localStorage:', err);
-      }
-    }
-
-    /**
-     * Инициализация Telegram WebApp SDK с безопасной проверкой окружения.
-     */
-    function initTelegram() {
-      let userName = 'Алекс';
-      try {
-        tg = window.Telegram?.WebApp || null;
-        isInsideTelegram = Boolean(tg && tg.initData && tg.initData.length > 0);
-
-        if (tg) {
-          if (typeof tg.ready === 'function') tg.ready();
-          if (typeof tg.expand === 'function') tg.expand();
-          if (typeof tg.setHeaderColor === 'function') tg.setHeaderColor('#0e1621');
-          if (typeof tg.setBackgroundColor === 'function') tg.setBackgroundColor('#0e1621');
-
-          const tgUser = tg.initDataUnsafe?.user;
-          if (tgUser?.first_name) {
-            userName = tgUser.first_name;
-          }
-        }
-      } catch (err) {
-        console.warn('Ошибка инициализации Telegram WebApp SDK:', err);
-      }
-
-      if (!isInsideTelegram) {
-        document.getElementById('desktop-tg-bar').classList.remove('hidden');
-      }
-
-      document.getElementById('user-greeting').textContent = `Привет, ${userName}`;
-    }
-
-    /* ===================================================================== */
-    /* УТИЛИТЫ ФОРМАТИРОВАНИЯ И УВЕДОМЛЕНИЙ                                  */
-    /* ===================================================================== */
-
-    function formatRub(amount) {
-      try {
-        return `${new Intl.NumberFormat('ru-RU').format(Math.round(amount))} ₽`;
-      } catch (e) {
-        return `${Math.round(amount)} ₽`;
-      }
-    }
-
-    function formatTimestamp(ts) {
-      const date = new Date(ts);
-      const now = new Date();
-      const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const yesterdayStart = todayStart - 86400000;
-
-      if (ts >= todayStart) return `Сегодня, ${timeStr}`;
-      if (ts >= yesterdayStart) return `Вчера, ${timeStr}`;
-      return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) + `, ${timeStr}`;
-    }
-
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-
-    function pluralize(n, one, few, many) {
-      const mod10 = n % 10;
-      const mod100 = n % 100;
-      if (mod10 === 1 && mod100 !== 11) return one;
-      if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
-      return many;
-    }
-
-    /**
-     * Всплывающее уведомление Toast (с поддержкой кнопки «Отменить»).
-     */
-    function showToast(message, type = 'info', undoCallback = null) {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-
-      const accentClass = type === 'success'
-        ? 'border-tg-green/50 bg-[#13261e]'
-        : type === 'warning'
-        ? 'border-tg-star/50 bg-[#261f12]'
-        : 'border-tg-blue/45 bg-[#132230]';
-
-      toast.className = `pointer-events-auto w-full max-w-[390px] px-4 py-3 rounded-2xl border ${accentClass} shadow-xl flex items-center justify-between gap-3 text-xs font-medium text-white transition-all duration-300`;
-
-      const textSpan = document.createElement('span');
-      textSpan.textContent = message;
-      toast.appendChild(textSpan);
-
-      if (undoCallback) {
-        const undoBtn = document.createElement('button');
-        undoBtn.type = 'button';
-        undoBtn.className = 'shrink-0 px-2.5 py-1 rounded-lg bg-tg-blue/20 text-tg-blue font-bold hover:bg-tg-blue/30 transition';
-        undoBtn.textContent = 'Отменить';
-        undoBtn.onclick = () => {
-          undoCallback();
-          toast.remove();
-        };
-        toast.appendChild(undoBtn);
-      }
-
-      container.innerHTML = '';
-      container.appendChild(toast);
-
-      setTimeout(() => {
-        toast.classList.add('opacity-0', '-translate-y-2');
-        setTimeout(() => toast.remove(), 250);
-      }, undoCallback ? 4500 : 2800);
-    }
-
-    /* ===================================================================== */
-    /* НАВИГАЦИЯ ПО ВКЛАДКАМ И МОДАЛЬНЫМ ОКНАМ                               */
-    /* ===================================================================== */
-
-    function switchTab(tabId) {
-      triggerHaptic('light');
-      state.activeTab = tabId;
-
-      ['home', 'analytics', 'social', 'pro'].forEach((id) => {
-        const el = document.getElementById(`tab-${id}`);
-        if (el) el.classList.toggle('hidden', id !== tabId);
-      });
-
-      document.querySelectorAll('.nav-btn').forEach((btn) => {
-        const isCurrent = btn.dataset.tab === tabId;
-        btn.classList.toggle('text-tg-blue', isCurrent && tabId !== 'pro');
-        btn.classList.toggle('text-tg-star', isCurrent && tabId === 'pro');
-        btn.classList.toggle('text-tg-muted', !isCurrent);
-      });
-
-      document.getElementById('main-scroll').scrollTop = 0;
-
-      if (tabId === 'home') renderHome();
-      if (tabId === 'analytics') renderAnalytics();
-      if (tabId === 'social') renderSocialTab();
-      if (tabId === 'pro') renderProTab();
-    }
-
-    function switchSocialSubtab(subtab) {
-      triggerHaptic('light');
-      state.socialSubtab = subtab;
-
-      const isSubs = subtab === 'subs';
-      document.getElementById('social-panel-subs').classList.toggle('hidden', !isSubs);
-      document.getElementById('social-panel-split').classList.toggle('hidden', isSubs);
-
-      const subsBtn = document.getElementById('subtab-btn-subs');
-      const splitBtn = document.getElementById('subtab-btn-split');
-
-      subsBtn.className = isSubs
-        ? 'py-2.5 px-3 rounded-xl text-xs font-bold transition bg-tg-blue text-white shadow-sm'
-        : 'py-2.5 px-3 rounded-xl text-xs font-bold transition text-tg-muted hover:text-white';
-
-      splitBtn.className = !isSubs
-        ? 'py-2.5 px-3 rounded-xl text-xs font-bold transition bg-tg-blue text-white shadow-sm'
-        : 'py-2.5 px-3 rounded-xl text-xs font-bold transition text-tg-muted hover:text-white';
-    }
-
-    function openModal(id) {
-      triggerHaptic('light');
-      document.getElementById(id).classList.remove('hidden');
-    }
-
-    function closeModal(id) {
-      document.getElementById(id).classList.add('hidden');
-    }
-
-    /* ===================================================================== */
-    /* УМНЫЙ БЫСТРЫЙ ВВОД (NLP-ПАРСЕР)                                       */
-    /* ===================================================================== */
-
-    /**
-     * Распознаёт сумму, название и категорию из строки вида "Кофе 350", "Пятерочка 1240".
-     */
-    function parseSmartExpense(rawText) {
-      const text = rawText.trim();
-      if (!text) return null;
-
-      const numMatch = text.match(/(\d+(?:[\s\u00A0]\d{3})*(?:[.,]\d{1,2})?)/);
-      if (!numMatch) return null;
-
-      const rawNumber = numMatch[1].replace(/[\s\u00A0]/g, '').replace(',', '.');
-      const amount = Math.round(parseFloat(rawNumber));
-      if (!amount || amount <= 0) return null;
-
-      let title = text
-        .replace(numMatch[0], '')
-        .replace(/(?:₽|руб\.?|р\.?)(?=\s|$)/gi, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-      let detectedCat = state.pinnedQuickCategory || 'other';
-
-      if (!state.pinnedQuickCategory) {
-        const lower = text.toLowerCase();
-        let matched = false;
-        for (const catId of CATEGORY_ORDER) {
-          const cat = CATEGORIES[catId];
-          if (cat.keywords.some((kw) => lower.includes(kw))) {
-            detectedCat = catId;
-            matched = true;
-            break;
-          }
-        }
-        if (!matched) {
-          detectedCat = 'other';
-        }
-      }
-
-      if (!title) {
-        title = CATEGORIES[detectedCat].name;
-      } else {
-        title = title.charAt(0).toUpperCase() + title.slice(1);
-      }
-
-      return { title, amount, category: detectedCat };
-    }
-
-    function selectQuickCategory(catId) {
-      triggerHaptic('light');
-      state.pinnedQuickCategory = state.pinnedQuickCategory === catId ? null : catId;
-      renderQuickCategoryChips();
-      updateSmartPreview();
-    }
-
-    function renderQuickCategoryChips() {
-      const container = document.getElementById('quick-category-chips');
-      const clearBtn = document.getElementById('clear-cat-chip-btn');
-      clearBtn.classList.toggle('hidden', !state.pinnedQuickCategory);
-
-      container.innerHTML = CATEGORY_ORDER.map((catId) => {
-        const cat = CATEGORIES[catId];
-        const isActive = state.pinnedQuickCategory === catId;
-        return `
-          <button
-            type="button"
-            onclick="selectQuickCategory('${catId}')"
-            class="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 border transition active:scale-95 ${
-              isActive
-                ? 'bg-tg-blue/20 border-tg-blue text-white'
-                : 'bg-tg-bg border-tg-border text-tg-muted hover:text-white'
-            }"
-          >
-            <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${cat.color};"></span>
-            <span>${cat.name}</span>
-          </button>
-        `;
-      }).join('');
-    }
-
-    function updateSmartPreview() {
-      const smartInput = document.getElementById('smart-input');
-      const smartPreview = document.getElementById('smart-preview');
-      const smartPreviewText = document.getElementById('smart-preview-text');
-      const smartPreviewCat = document.getElementById('smart-preview-cat');
-
-      const parsed = parseSmartExpense(smartInput.value);
-      if (parsed) {
-        const cat = CATEGORIES[parsed.category];
-        smartPreviewText.textContent = `${parsed.title} • ${formatRub(parsed.amount)}`;
-        smartPreviewCat.textContent = cat.name;
-        smartPreviewCat.className = `shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-semibold ${cat.bgClass}`;
-        smartPreview.classList.remove('hidden');
-        smartPreview.classList.add('flex');
-      } else {
-        smartPreview.classList.add('hidden');
-        smartPreview.classList.remove('flex');
-      }
-    }
-
-    /* ===================================================================== */
-    /* РЕНДЕР ВКЛАДКИ 1: ГЛАВНАЯ                                             */
-    /* ===================================================================== */
-
-    function renderHome() {
-      const totalSpent = state.transactions.reduce((sum, tx) => sum + tx.amount, 0);
-      const percent = state.budget > 0 ? Math.round((totalSpent / state.budget) * 100) : 0;
-      const clampedWidth = Math.min(percent, 100);
-      const remaining = state.budget - totalSpent;
-
-      // Обновление бейджа статуса в шапке (Free / Pro ⭐ · тариф)
-      const statusBtn = document.getElementById('header-status-btn');
-      const statusDot = document.getElementById('header-status-dot');
-      const statusLabel = document.getElementById('header-status-label');
-
-      if (state.isPro) {
-        const plan = PRO_PLANS[state.proPlan] || PRO_PLANS.quarterly;
-        statusBtn.className = 'shrink-0 px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition active:scale-95 bg-gradient-to-r from-[#F5A623] to-[#FFD166] text-[#1a1204] shadow-md shadow-tg-star/25';
-        statusDot.className = 'hidden';
-        statusLabel.textContent = `Pro ⭐ · ${plan.shortBadge}`;
-      } else {
-        statusBtn.className = 'shrink-0 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition active:scale-95 bg-tg-card border border-tg-border hover:border-tg-star/50 text-white';
-        statusDot.className = 'w-2 h-2 rounded-full bg-tg-muted';
-        statusLabel.textContent = 'Free';
-      }
-
-      // Карточка бюджета
-      document.getElementById('total-spent-display').textContent = formatRub(totalSpent);
-      document.getElementById('budget-limit-display').textContent = `из ${formatRub(state.budget)}`;
-      document.getElementById('budget-percent-text').textContent = `${percent}%`;
-
-      const bar = document.getElementById('budget-progress-bar');
-      const pctLabel = document.getElementById('budget-percent-text');
-      bar.style.width = `${clampedWidth}%`;
-      bar.classList.remove('bg-tg-green', 'bg-tg-star', 'bg-tg-red');
-      pctLabel.classList.remove('text-tg-green', 'text-tg-star', 'text-tg-red');
-
-      if (percent >= 95) {
-        bar.classList.add('bg-tg-red');
-        pctLabel.classList.add('text-tg-red');
-      } else if (percent >= 75) {
-        bar.classList.add('bg-tg-star');
-        pctLabel.classList.add('text-tg-star');
-      } else {
-        bar.classList.add('bg-tg-green');
-        pctLabel.classList.add('text-tg-green');
-      }
-
-      const statusText = document.getElementById('budget-status-text');
-      if (remaining >= 0) {
-        statusText.textContent = `Осталось ${formatRub(remaining)}`;
-        statusText.className = 'text-tg-muted';
-      } else {
-        statusText.textContent = `Превышение на ${formatRub(Math.abs(remaining))}`;
-        statusText.className = 'text-tg-red font-semibold';
-      }
-
-      // Чипы категорий
-      renderQuickCategoryChips();
-
-      // Список транзакций
-      const txList = document.getElementById('transactions-list');
-      document.getElementById('tx-count-badge').textContent =
-        `${state.transactions.length} ${pluralize(state.transactions.length, 'операция', 'операции', 'операций')}`;
-
-      if (state.transactions.length === 0) {
-        txList.innerHTML = `
-          <div class="bg-tg-card border border-tg-border rounded-2xl p-6 text-center space-y-1.5">
-            <p class="text-sm font-bold text-white">Пока нет трат</p>
-            <p class="text-xs text-tg-muted">Напиши в поле выше, например: «Кофе 350»</p>
+  <!-- Поиск FACEIT -->
+  <div class="card">
+    <div class="label">Профиль FACEIT</div>
+    <div class="search-row">
+      <input id="nickInput" type="text" placeholder="Ник или ссылка FACEIT (напр. donk666)" />
+      <button id="analyzeBtn" class="btn compact" onclick="runAnalysis()">Анализ</button>
+    </div>
+  </div>
+
+  <!-- Вкладка 1: Обзор -->
+  <div id="tab-overview" class="section active">
+    <div id="emptyState" class="card">
+      <div style="font-size:16px;font-weight:700;margin-bottom:6px;">Разбери последние матчи CS2</div>
+      <div class="note">Введи свой ник FACEIT сверху. Приложение проверит твой ADR, K/D, процент хедшотов, лузстрики и покажет главные ошибки, которые тормозят ап уровня.</div>
+    </div>
+
+    <div id="overviewContent" class="hidden">
+      <div class="card">
+        <div class="profile-top">
+          <img id="pAvatar" class="avatar" src="" alt="" />
+          <div>
+            <div id="pNick" class="nick">Player</div>
+            <div id="pEloLine" class="elo-line">0 ELO</div>
           </div>
-        `;
-        return;
-      }
-
-      const sorted = [...state.transactions].sort((a, b) => b.timestamp - a.timestamp);
-      txList.innerHTML = sorted.map((tx) => {
-        const cat = CATEGORIES[tx.category] || CATEGORIES.other;
-        return `
-          <div class="bg-tg-card border border-tg-border rounded-2xl px-3.5 py-3 flex items-center justify-between gap-3">
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="w-10 h-10 rounded-xl ${cat.bgClass} flex items-center justify-center shrink-0">
-                ${cat.icon}
-              </div>
-              <div class="min-w-0">
-                <p class="text-sm font-semibold text-white truncate">${escapeHtml(tx.title)}</p>
-                <p class="text-[11px] text-tg-muted truncate">${cat.name} • ${formatTimestamp(tx.timestamp)}</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-1.5 shrink-0">
-              <span class="text-sm font-extrabold text-white whitespace-nowrap">−${formatRub(tx.amount)}</span>
-              <button
-                type="button"
-                onclick="deleteTransaction('${tx.id}')"
-                aria-label="Удалить операцию"
-                class="p-2 rounded-xl text-tg-muted hover:text-tg-red hover:bg-tg-red/10 transition active:scale-90"
-              >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 6h18"/>
-                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function addTransaction(title, amount, category) {
-      const newTx = {
-        id: 'tx_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-        title: title.trim(),
-        amount: Math.round(Number(amount)),
-        category: CATEGORIES[category] ? category : 'other',
-        timestamp: Date.now()
-      };
-      state.transactions.unshift(newTx);
-      saveState();
-      triggerHaptic('success');
-      renderHome();
-      if (state.activeTab === 'analytics') renderAnalytics();
-      showToast(`Записано: ${newTx.title} (${formatRub(newTx.amount)})`, 'success');
-    }
-
-    function deleteTransaction(id) {
-      const idx = state.transactions.findIndex((t) => t.id === id);
-      if (idx === -1) return;
-      const [removed] = state.transactions.splice(idx, 1);
-      saveState();
-      triggerHaptic('light');
-      renderHome();
-      if (state.activeTab === 'analytics') renderAnalytics();
-
-      showToast(`Удалено: ${removed.title}`, 'info', () => {
-        state.transactions.push(removed);
-        saveState();
-        triggerHaptic('success');
-        renderHome();
-        if (state.activeTab === 'analytics') renderAnalytics();
-      });
-    }
-
-    /* ===================================================================== */
-    /* МОДАЛКИ РАСХОДА И БЮДЖЕТА                                             */
-    /* ===================================================================== */
-
-    function openExpenseModal(preselectedCat = 'food') {
-      state.modalSelectedCategory = CATEGORIES[preselectedCat] ? preselectedCat : 'food';
-      document.getElementById('exp-amount').value = '';
-      document.getElementById('exp-title').value = '';
-      renderModalCategoryGrid();
-      openModal('expense-modal');
-      setTimeout(() => document.getElementById('exp-amount').focus(), 100);
-    }
-
-    function renderModalCategoryGrid() {
-      const grid = document.getElementById('modal-category-grid');
-      grid.innerHTML = CATEGORY_ORDER.map((catId) => {
-        const cat = CATEGORIES[catId];
-        const active = state.modalSelectedCategory === catId;
-        return `
-          <button
-            type="button"
-            onclick="selectModalCategory('${catId}')"
-            class="flex items-center gap-2 p-2.5 rounded-xl border text-xs font-semibold transition active:scale-95 ${
-              active ? 'bg-tg-blue/15 border-tg-blue text-white' : 'bg-tg-bg border-tg-border text-tg-muted'
-            }"
-          >
-            <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${cat.color};"></span>
-            <span class="truncate">${cat.name}</span>
-          </button>
-        `;
-      }).join('');
-    }
-
-    function selectModalCategory(catId) {
-      triggerHaptic('light');
-      state.modalSelectedCategory = catId;
-      renderModalCategoryGrid();
-    }
-
-    function openBudgetModal() {
-      document.getElementById('budget-input').value = state.budget;
-      openModal('budget-modal');
-    }
-
-    function setBudgetPreset(val) {
-      triggerHaptic('light');
-      document.getElementById('budget-input').value = val;
-    }
-
-    /* ===================================================================== */
-    /* РЕНДЕР ВКЛАДКИ 2: АНАЛИТИКА (DONUT CHART + AI PRO + CSV EXPORT)       */
-    /* ===================================================================== */
-
-    function renderAnalytics() {
-      const total = state.transactions.reduce((sum, tx) => sum + tx.amount, 0);
-      document.getElementById('analytics-total-pill').textContent = formatRub(total);
-
-      const totalsByCat = {};
-      const countsByCat = {};
-      state.transactions.forEach((tx) => {
-        const key = CATEGORIES[tx.category] ? tx.category : 'other';
-        totalsByCat[key] = (totalsByCat[key] || 0) + tx.amount;
-        countsByCat[key] = (countsByCat[key] || 0) + 1;
-      });
-
-      const breakdown = Object.keys(totalsByCat)
-        .map((catId) => ({
-          cat: CATEGORIES[catId],
-          amount: totalsByCat[catId],
-          count: countsByCat[catId],
-          percent: total > 0 ? Math.round((totalsByCat[catId] / total) * 100) : 0
-        }))
-        .sort((a, b) => b.amount - a.amount);
-
-      if (state.selectedAnalyticsCategory && !totalsByCat[state.selectedAnalyticsCategory]) {
-        state.selectedAnalyticsCategory = null;
-      }
-
-      // Отрисовка SVG Donut Chart
-      const radius = 68;
-      const circumference = 2 * Math.PI * radius;
-      const segmentsGroup = document.getElementById('donut-segments');
-
-      if (total === 0) {
-        segmentsGroup.innerHTML = '';
-        document.getElementById('donut-center-label').textContent = 'Нет данных';
-        document.getElementById('donut-center-value').textContent = '0 ₽';
-        document.getElementById('donut-center-sub').textContent = 'Добавь трату';
-      } else {
-        let cumulativeOffset = 0;
-        segmentsGroup.innerHTML = breakdown.map((item) => {
-          const sliceFraction = item.amount / total;
-          const dashLength = Math.max(sliceFraction * circumference - 3, 2);
-          const isSelected = state.selectedAnalyticsCategory === item.cat.id;
-          const opacity = state.selectedAnalyticsCategory && !isSelected ? '0.35' : '1';
-          const strokeWidth = isSelected ? '22' : '18';
-
-          const svg = `
-            <circle
-              cx="90" cy="90" r="${radius}"
-              fill="none"
-              stroke="${item.cat.color}"
-              stroke-width="${strokeWidth}"
-              stroke-dasharray="${dashLength} ${circumference}"
-              stroke-dashoffset="${-cumulativeOffset}"
-              stroke-linecap="round"
-              opacity="${opacity}"
-              class="cursor-pointer transition-all duration-300"
-              onclick="toggleAnalyticsCategory('${item.cat.id}')"
-            ></circle>
-          `;
-          cumulativeOffset += sliceFraction * circumference;
-          return svg;
-        }).join('');
-
-        const selectedItem = breakdown.find((b) => b.cat.id === state.selectedAnalyticsCategory);
-        if (selectedItem) {
-          document.getElementById('donut-center-label').textContent = selectedItem.cat.name;
-          document.getElementById('donut-center-value').textContent = formatRub(selectedItem.amount);
-          document.getElementById('donut-center-sub').textContent = `${selectedItem.percent}% от трат`;
-        } else {
-          document.getElementById('donut-center-label').textContent = 'Всего за месяц';
-          document.getElementById('donut-center-value').textContent = formatRub(total);
-          document.getElementById('donut-center-sub').textContent = `${state.transactions.length} опер.`;
-        }
-      }
-
-      // Детальный список категорий
-      const listEl = document.getElementById('analytics-breakdown');
-      if (breakdown.length === 0) {
-        listEl.innerHTML = `<p class="text-xs text-tg-muted text-center py-3">Добавь первый расход на Главной, чтобы увидеть статистику.</p>`;
-      } else {
-        listEl.innerHTML = breakdown.map((item) => {
-          const isSelected = state.selectedAnalyticsCategory === item.cat.id;
-          return `
-            <button
-              type="button"
-              onclick="toggleAnalyticsCategory('${item.cat.id}')"
-              class="w-full text-left p-2.5 rounded-xl transition ${isSelected ? 'bg-tg-elevated ring-1 ring-tg-blue/60' : 'hover:bg-tg-elevated/50'}"
-            >
-              <div class="flex items-center justify-between gap-2 mb-1.5">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <span class="w-8 h-8 rounded-lg ${item.cat.bgClass} flex items-center justify-center shrink-0">
-                    ${item.cat.icon}
-                  </span>
-                  <div class="min-w-0">
-                    <p class="text-xs font-bold text-white truncate">${item.cat.name}</p>
-                    <p class="text-[11px] text-tg-muted">${item.count} ${pluralize(item.count, 'трата', 'траты', 'трат')}</p>
-                  </div>
-                </div>
-                <div class="text-right shrink-0">
-                  <p class="text-xs font-extrabold text-white">${formatRub(item.amount)}</p>
-                  <p class="text-[11px] font-bold" style="color: ${item.cat.color};">${item.percent}%</p>
-                </div>
-              </div>
-              <div class="w-full h-1.5 bg-tg-bg rounded-full overflow-hidden">
-                <div class="h-full rounded-full transition-all duration-500" style="width: ${item.percent}%; background-color: ${item.cat.color};"></div>
-              </div>
-            </button>
-          `;
-        }).join('');
-      }
-
-      renderAiProBlock(total, breakdown);
-    }
-
-    function toggleAnalyticsCategory(catId) {
-      triggerHaptic('light');
-      state.selectedAnalyticsCategory = state.selectedAnalyticsCategory === catId ? null : catId;
-      renderAnalytics();
-    }
-
-    function renderAiProBlock(total, breakdown) {
-      const container = document.getElementById('ai-pro-section');
-
-      if (!state.isPro) {
-        container.innerHTML = `
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-bold text-white flex items-center gap-2">
-              <span class="text-tg-star">✦</span>
-              AI-советник и экспорт в Excel (.CSV)
-            </h2>
-            <span class="px-2 py-0.5 rounded-lg bg-tg-star/15 text-tg-star text-[10px] font-extrabold">PRO ⭐</span>
-          </div>
-
-          <div class="relative rounded-xl bg-tg-bg/85 border border-tg-border p-4 overflow-hidden">
-            <div class="space-y-2.5 blur-[4px] select-none pointer-events-none opacity-60">
-              <p class="text-xs text-white leading-relaxed">Основная статья расходов — «Еда» (44%). Оптимизация спонтанных покупок поможет сохранить до 3 800 ₽ до конца месяца.</p>
-              <div class="h-9 rounded-xl bg-tg-elevated w-full"></div>
-            </div>
-
-            <div class="absolute inset-0 flex flex-col items-center justify-center bg-tg-bg/60 p-3 text-center">
-              <div class="w-9 h-9 rounded-xl bg-tg-star/20 text-tg-star flex items-center justify-center mb-2">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
-              </div>
-              <p class="text-xs font-bold text-white mb-2.5">Доступно в Spendly Pro от 33 ⭐/мес</p>
-              <button type="button" onclick="switchTab('pro')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-[#F5A623] to-[#FFD166] text-[#1a1204] text-xs font-extrabold shadow-lg shadow-tg-star/20 transition active:scale-95">
-                Открыть с Pro ⭐
-              </button>
-            </div>
-          </div>
-        `;
-        return;
-      }
-
-      // Активный Pro-режим: живые советы на основе реальных данных пользователя
-      const subsTotal = state.subscriptions.reduce((s, item) => s + item.price, 0);
-      const topCat = breakdown[0];
-      const budgetPct = state.budget > 0 ? Math.round((total / state.budget) * 100) : 0;
-      const potentialSave = topCat ? Math.round(topCat.amount * 0.15) : 0;
-
-      const insights = [];
-      if (topCat) {
-        insights.push(`Главная категория — «${topCat.cat.name}» (${topCat.percent}%, ${formatRub(topCat.amount)}). Сократив её на 15%, вы сохраните около ${formatRub(potentialSave)} в этом месяце.`);
-      } else {
-        insights.push('Добавьте первые траты, чтобы AI-советник проанализировал вашу структуру расходов.');
-      }
-
-      if (budgetPct >= 85) {
-        insights.push(`Осторожно: уже израсходовано ${budgetPct}% месячного лимита. Попробуйте заморозить необязательные покупки до конца периода.`);
-      } else {
-        insights.push(`Отличный темп! Использовано ${budgetPct}% лимита, в запасе ещё ${formatRub(Math.max(0, state.budget - total))}.`);
-      }
-
-      if (subsTotal > 0) {
-        insights.push(`На регулярные подписки уходит ${formatRub(subsTotal)}/мес (${formatRub(subsTotal * 12)}/год). Проверьте во вкладке «Сплит», всеми ли сервисами вы пользуетесь.`);
-      }
-
-      container.innerHTML = `
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-sm font-bold text-white flex items-center gap-2">
-            <span class="text-tg-star">✦</span>
-            AI-советник Spendly
-          </h2>
-          <span class="px-2 py-0.5 rounded-lg bg-tg-green/15 text-tg-green text-[10px] font-extrabold">PRO АКТИВЕН</span>
+          <div id="pLevel" class="lvl-pill">1</div>
         </div>
 
-        <div class="space-y-2.5 mb-4">
-          ${insights.map((text) => `
-            <div class="bg-tg-bg border border-tg-border rounded-xl p-3 text-xs text-white/90 leading-relaxed flex items-start gap-2.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-tg-star mt-1.5 shrink-0"></span>
-              <span>${text}</span>
-            </div>
-          `).join('')}
+        <div class="kpi-grid">
+          <div class="kpi"><div id="kKd" class="kpi-val">0.00</div><div class="kpi-lbl">K/D</div></div>
+          <div class="kpi"><div id="kAdr" class="kpi-val">0</div><div class="kpi-lbl">ADR</div></div>
+          <div class="kpi"><div id="kHs" class="kpi-val">0%</div><div class="kpi-lbl">HS%</div></div>
+          <div class="kpi"><div id="kWr" class="kpi-val">0%</div><div class="kpi-lbl">Winrate</div></div>
         </div>
 
-        <button
-          type="button"
-          onclick="exportTransactionsToCsv()"
-          class="w-full py-3 px-4 rounded-xl bg-tg-elevated hover:bg-tg-border border border-tg-blue/40 text-white text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95"
-        >
-          <svg class="w-4 h-4 text-tg-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" x2="12" y1="15" y2="3"/>
-          </svg>
-          Скачать отчёт в Excel (.CSV)
+        <div class="score-box">
+          <div>
+            <div style="font-size:13px;font-weight:700;">Индекс импакта</div>
+            <div id="scoreSub" class="note">По последним матчам CS2</div>
+          </div>
+          <div id="impactScore" class="score-num">0/100</div>
+        </div>
+
+        <button class="btn secondary" style="margin-top:12px;" onclick="shareResult()">
+          Поделиться разбором с друзьями
         </button>
-      `;
+      </div>
+
+      <div class="card">
+        <div id="matchesTitle" class="label">Последние матчи</div>
+        <div id="matchesList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Вкладка 2: Ошибки и советы -->
+  <div id="tab-coach" class="section">
+    <div id="coachEmpty" class="card">
+      <div class="note">Сначала введи ник FACEIT сверху и нажми «Анализ».</div>
+    </div>
+
+    <div id="coachContent" class="hidden">
+      <div class="card">
+        <div class="label">Найденные ошибки и советы</div>
+        <div id="mistakesList"></div>
+        <div id="mistakesLock" class="lock-box hidden">
+          <div id="mistakesLockText" style="font-size:14px;font-weight:700;margin-bottom:6px;"></div>
+          <div class="note" style="margin-bottom:10px;">В Pro открывается полный разбор 20 игр, все найденные ошибки и Тильт-детектор.</div>
+          <button class="btn gold" onclick="goToPro()">Открыть Pro за 50 ⭐</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label">Тильт-детектор</div>
+        <div id="tiltBlock"></div>
+      </div>
+
+      <div class="card">
+        <div class="label">План разминки перед каткой (15 мин)</div>
+        <div id="warmupList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Вкладка 3: Карты -->
+  <div id="tab-maps" class="section">
+    <div id="mapsEmpty" class="card">
+      <div class="note">Сначала введи ник FACEIT сверху и нажми «Анализ».</div>
+    </div>
+
+    <div id="mapsContent" class="hidden">
+      <div class="card">
+        <div class="label">Рекомендация на вето</div>
+        <div id="vetoAdvice" class="note"></div>
+      </div>
+
+      <div class="card">
+        <div class="label">Статистика по картам</div>
+        <div id="mapsList"></div>
+        <div id="mapsLock" class="lock-box hidden">
+          <div id="mapsLockText" style="font-size:14px;font-weight:700;margin-bottom:8px;"></div>
+          <button class="btn gold" onclick="goToPro()">Открыть все карты в Pro ⭐</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Вкладка 4: Pro -->
+  <div id="tab-pro" class="section">
+    <div class="card">
+      <div class="label">Статус подписки</div>
+      <div id="proStatusText" style="font-size:17px;font-weight:700;">Тариф Free</div>
+      <div id="proStatusSub" class="note" style="margin-top:4px;">Pro открывает анализ 20 последних матчей, все ошибки, Тильт-детектор и полный Map Pool.</div>
+    </div>
+
+    <div class="card">
+      <div class="label">Тарифы EloCoach Pro</div>
+
+      <div class="plan-card">
+        <div>
+          <div style="font-weight:700;">1 месяц</div>
+          <div class="note">Полный разбор на 30 дней</div>
+        </div>
+        <button class="btn compact" onclick="buyPlan('month', this)">50 ⭐</button>
+      </div>
+
+      <div class="plan-card featured">
+        <div>
+          <div style="font-weight:700;">3 месяца · Выгодно</div>
+          <div class="note">Экономия 33% на 90 дней</div>
+        </div>
+        <button class="btn gold compact" onclick="buyPlan('quarter', this)">100 ⭐</button>
+      </div>
+
+      <div class="plan-card">
+        <div>
+          <div style="font-weight:700;">1 год</div>
+          <div class="note">Безлимит на 365 дней</div>
+        </div>
+        <button class="btn compact" onclick="buyPlan('year', this)">500 ⭐</button>
+      </div>
+
+      <button class="btn secondary" style="margin-top:6px;" onclick="loadMe(true)">Обновить статус оплаты</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <nav class="nav">
+    <button id="nav-overview" class="active" onclick="switchTab('overview', this)">
+      <span class="icon">🎯</span><span>Обзор</span>
+    </button>
+    <button id="nav-coach" onclick="switchTab('coach', this)">
+      <span class="icon">🧠</span><span>Ошибки</span>
+    </button>
+    <button id="nav-maps" onclick="switchTab('maps', this)">
+      <span class="icon">🗺️</span><span>Карты</span>
+    </button>
+    <button id="nav-pro" onclick="switchTab('pro', this)">
+      <span class="icon">⭐</span><span>Pro</span>
+    </button>
+  </nav>
+
+  <script>
+    const API_BASE = "https://spendly-ffrog0242.mia0.amvera.tech";
+    const BOT_USERNAME = "spendly_ap_bot";
+
+    const tg = window.Telegram ? window.Telegram.WebApp : null;
+    if (tg) {
+      tg.ready();
+      tg.expand();
     }
 
-    /**
-     * Экспорт всех транзакций в .CSV (UTF-8 BOM для корректной кириллицы в Excel).
-     */
-    function exportTransactionsToCsv() {
-      try {
-        triggerHaptic('success');
-        const header = 'Дата;Название;Категория;Сумма (₽)';
-        const rows = state.transactions.map((tx) => {
-          const dateStr = new Date(tx.timestamp).toLocaleString('ru-RU');
-          const catName = (CATEGORIES[tx.category] || CATEGORIES.other).name;
-          const safeTitle = tx.title.replace(/;/g, ',');
-          return `${dateStr};${safeTitle};${catName};${tx.amount}`;
-        });
+    let lastData = null;
 
-        const csvContent = '\uFEFF' + [header, ...rows].join('\r\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
+    function esc(str) {
+      return String(str || "").replace(/[&<>"']/g, s => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+      }[s]));
+    }
 
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `spendly_report_${new Date().toISOString().slice(0, 10)}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.style.display = "block";
+      clearTimeout(window._t);
+      window._t = setTimeout(() => { el.style.display = "none"; }, 2800);
+    }
 
-        showToast('Файл Excel (.CSV) успешно скачан!', 'success');
-      } catch (err) {
-        console.error('Ошибка экспорта CSV:', err);
-        showToast('Не удалось сформировать файл', 'warning');
+    function switchTab(name, btn) {
+      document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+      document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+      document.getElementById("tab-" + name).classList.add("active");
+      btn.classList.add("active");
+    }
+
+    function goToPro() {
+      switchTab("pro", document.getElementById("nav-pro"));
+    }
+
+    function updateProBadge(isPro, proUntil) {
+      const badge = document.getElementById("proBadge");
+      const title = document.getElementById("proStatusText");
+      const sub = document.getElementById("proStatusSub");
+      if (isPro) {
+        const dt = proUntil ? new Date(proUntil * 1000).toLocaleDateString("ru-RU") : "";
+        badge.textContent = "Pro ⭐";
+        badge.classList.add("pro");
+        title.textContent = "EloCoach Pro активен";
+        sub.textContent = dt ? `Подписка действует до ${dt}.` : "Все Pro-функции открыты.";
+      } else {
+        badge.textContent = "Free";
+        badge.classList.remove("pro");
+        title.textContent = "Базовый тариф Free";
+        sub.textContent = "Pro открывает анализ 20 последних матчей, все ошибки, Тильт-детектор и полный Map Pool.";
       }
     }
 
-    /* ===================================================================== */
-    /* РЕНДЕР ВКЛАДКИ 3: ПОДПИСКИ И ВИРАЛЬНЫЙ СПЛИТ ЧЕКОВ                    */
-    /* ===================================================================== */
+    async function loadMe(notify) {
+      try {
+        const headers = {};
+        if (tg && tg.initData) headers["X-Telegram-Init-Data"] = tg.initData;
+        const res = await fetch(`${API_BASE}/api/me`, { headers });
+        const data = await res.json();
+        updateProBadge(Boolean(data.is_pro), data.pro_until);
+        const savedNick = data.faceit_nick || localStorage.getItem("cs2_last_nick") || "";
+        if (savedNick && !document.getElementById("nickInput").value) {
+          document.getElementById("nickInput").value = savedNick;
+          runAnalysis(savedNick);
+        }
+        if (notify) showToast(data.is_pro ? "Pro активен ⭐" : "Тариф Free");
+      } catch (e) {
+        const saved = localStorage.getItem("cs2_last_nick");
+        if (saved) document.getElementById("nickInput").value = saved;
+      }
+    }
 
-    function renderSocialTab() {
-      const totalMonthly = state.subscriptions.reduce((s, item) => s + item.price, 0);
-      document.getElementById('subs-monthly-total').textContent = formatRub(totalMonthly);
-      document.getElementById('subs-yearly-total').textContent = formatRub(totalMonthly * 12);
-      document.getElementById('subs-limit-hint').textContent = state.isPro
-        ? '• Безлимит Pro ⭐'
-        : `• ${state.subscriptions.length}/3 на Free`;
+    async function runAnalysis(forcedNick) {
+      const nick = (forcedNick || document.getElementById("nickInput").value || "").trim();
+      if (!nick) return showToast("Введите никнейм FACEIT");
 
-      const listEl = document.getElementById('subscriptions-list');
-      if (state.subscriptions.length === 0) {
-        listEl.innerHTML = `
-          <div class="bg-tg-card border border-tg-border rounded-2xl p-6 text-center">
-            <p class="text-xs text-tg-muted">Подписок пока нет. Добавьте сервисы, чтобы не забыть о списаниях.</p>
+      const btn = document.getElementById("analyzeBtn");
+      btn.disabled = true;
+      btn.textContent = "...";
+
+      try {
+        const headers = { "Content-Type": "application/json" };
+        if (tg && tg.initData) headers["X-Telegram-Init-Data"] = tg.initData;
+
+        const res = await fetch(`${API_BASE}/api/analyze`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ nickname: nick })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Ошибка сервера");
+
+        lastData = data;
+        localStorage.setItem("cs2_last_nick", data.player.nickname);
+        document.getElementById("nickInput").value = data.player.nickname;
+        renderData(data);
+        showToast("Статистика обновлена");
+      } catch (err) {
+        showToast(err.message || "Не удалось загрузить профиль");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Анализ";
+      }
+    }
+
+    function renderData(d) {
+      const p = d.player;
+      const s = d.summary;
+
+      document.getElementById("emptyState").classList.add("hidden");
+      document.getElementById("overviewContent").classList.remove("hidden");
+      document.getElementById("coachEmpty").classList.add("hidden");
+      document.getElementById("coachContent").classList.remove("hidden");
+      document.getElementById("mapsEmpty").classList.add("hidden");
+      document.getElementById("mapsContent").classList.remove("hidden");
+
+      const avatarEl = document.getElementById("pAvatar");
+      avatarEl.src = p.avatar || "https://distribution.faceit-cdn.net/images/f86c25b1-7151-4a76-82be-c5fb2f77e204.jpeg";
+      document.getElementById("pNick").textContent = p.nickname + (p.country ? ` · ${p.country}` : "");
+      document.getElementById("pEloLine").textContent = p.level < 10
+        ? `${p.elo} ELO · до ${p.next_level} lvl осталось ${p.elo_to_next} ELO`
+        : `${p.elo} ELO · Максимальный 10 уровень`;
+      document.getElementById("pLevel").textContent = p.level;
+
+      document.getElementById("kKd").textContent = s.avg_kd;
+      document.getElementById("kAdr").textContent = s.avg_adr || "—";
+      document.getElementById("kHs").textContent = `${s.avg_hs}%`;
+      document.getElementById("kWr").textContent = `${s.winrate}%`;
+      document.getElementById("impactScore").textContent = `${s.impact_score}/100`;
+      document.getElementById("scoreSub").textContent = `Анализ последних ${s.total_pool} игр CS2`;
+
+      document.getElementById("matchesTitle").textContent = d.is_pro
+        ? `Последние ${d.matches.length} матчей (Pro)`
+        : `Последние ${d.matches.length} матчей (в Pro доступно 20)`;
+
+      const mList = document.getElementById("matchesList");
+      if (!d.matches.length) {
+        mList.innerHTML = '<div class="note">Недавние матчи CS2 не найдены.</div>';
+      } else {
+        mList.innerHTML = d.matches.map(m => `
+          <div class="match-row">
+            <div class="wl ${m.won ? "win" : "loss"}">${m.won ? "W" : "L"}</div>
+            <div class="m-main">
+              <div class="m-map">${esc(m.map)} · ${esc(m.score)}</div>
+              <div class="m-sub">${m.kills}/${m.assists}/${m.deaths} · HS ${m.hs}%</div>
+            </div>
+            <div class="m-stats">
+              <div>K/D ${m.kd}</div>
+              <div class="m-sub">ADR ${m.adr || "—"}</div>
+            </div>
           </div>
+        `).join("");
+      }
+
+      document.getElementById("mistakesList").innerHTML = d.mistakes.map(ms => `
+        <div class="mistake ${esc(ms.severity)}">
+          <div class="mistake-title">${esc(ms.title)}</div>
+          <div class="mistake-metric">${esc(ms.metric)}</div>
+          <div class="mistake-tip">${esc(ms.tip)}</div>
+        </div>
+      `).join("");
+
+      const mLock = document.getElementById("mistakesLock");
+      if (d.locked_mistakes_count > 0) {
+        mLock.classList.remove("hidden");
+        document.getElementById("mistakesLockText").textContent =
+          `Скрыто ещё ошибок: ${d.locked_mistakes_count}`;
+      } else {
+        mLock.classList.add("hidden");
+      }
+
+      const tiltEl = document.getElementById("tiltBlock");
+      if (d.tilt.locked) {
+        tiltEl.innerHTML = `
+          <div class="note">Оценка тильт-серий и правило стоп-лосса доступны в тарифе <b>Pro ⭐</b>.</div>
+          <button class="btn secondary" style="margin-top:10px;" onclick="goToPro()">Разблокировать Тильт-детектор</button>
         `;
       } else {
-        const sortedSubs = [...state.subscriptions].sort((a, b) => a.daysLeft - b.daysLeft);
-        listEl.innerHTML = sortedSubs.map((sub) => {
-          const urgent = sub.daysLeft <= 5;
-          const badgeClass = urgent ? 'bg-tg-star/15 text-tg-star' : 'bg-tg-elevated text-tg-muted';
+        tiltEl.innerHTML = `
+          <div style="font-size:15px;font-weight:700;margin-bottom:5px;">Риск тильта: ${esc(d.tilt.risk)}</div>
+          <div class="note">${esc(d.tilt.advice)}</div>
+        `;
+      }
+
+      document.getElementById("warmupList").innerHTML = d.warmup.map((w, i) => `
+        <div class="note" style="margin-bottom:6px;">${i + 1}. ${esc(w)}</div>
+      `).join("");
+
+      const vetoEl = document.getElementById("vetoAdvice");
+      if (d.best_map && d.worst_map) {
+        vetoEl.innerHTML = `Лучшая карта: <b>${esc(d.best_map.map)}</b> (${d.best_map.winrate}% WR). Первый бан на вето: <b>${esc(d.worst_map.map)}</b> (${d.worst_map.winrate}% WR).`;
+      } else {
+        vetoEl.textContent = "Сыграйте больше матчей на разных картах для расчёта вето.";
+      }
+
+      const mapsList = document.getElementById("mapsList");
+      if (!d.maps.length) {
+        mapsList.innerHTML = '<div class="note">Недостаточно матчей по картам.</div>';
+      } else {
+        mapsList.innerHTML = d.maps.map(mp => {
+          const cls = mp.winrate >= 55 ? "" : (mp.winrate >= 45 ? "mid" : "bad");
           return `
-            <div class="bg-tg-card border border-tg-border rounded-2xl px-3.5 py-3 flex items-center justify-between gap-3">
-              <div class="flex items-center gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-sm shrink-0" style="background-color: ${sub.color || '#2AABEE'}22; color: ${sub.color || '#2AABEE'};">
-                  ${escapeHtml(sub.name.charAt(0).toUpperCase())}
-                </div>
-                <div class="min-w-0">
-                  <p class="text-sm font-bold text-white truncate">${escapeHtml(sub.name)}</p>
-                  <span class="inline-block mt-0.5 px-2 py-0.5 rounded-md text-[10px] font-semibold ${badgeClass}">
-                    Через ${sub.daysLeft} ${pluralize(sub.daysLeft, 'день', 'дня', 'дней')}
-                  </span>
-                </div>
+            <div class="map-row">
+              <div class="map-head">
+                <span>${esc(mp.map)} (${mp.matches} игр)</span>
+                <span>${mp.winrate}% WR · K/D ${mp.kd}</span>
               </div>
-              <div class="flex items-center gap-2 shrink-0">
-                <span class="text-sm font-extrabold text-white">${formatRub(sub.price)}</span>
-                <button
-                  type="button"
-                  onclick="deleteSubscription('${sub.id}')"
-                  aria-label="Удалить подписку"
-                  class="p-2 rounded-xl text-tg-muted hover:text-tg-red hover:bg-tg-red/10 transition active:scale-90"
-                >
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 6 6 18M6 6l12 12"/>
-                  </svg>
-                </button>
-              </div>
+              <div class="bar-bg"><div class="bar-fill ${cls}" style="width:${mp.winrate}%"></div></div>
             </div>
           `;
-        }).join('');
+        }).join("");
       }
 
-      renderTipButtons();
-      updateBillSplit();
-    }
-
-    function openSubModal() {
-      if (!state.isPro && state.subscriptions.length >= 3) {
-        triggerHaptic('warning');
-        showToast('На Free доступно до 3 подписок. Подключи Pro ⭐ для безлимита!', 'warning');
-        switchTab('pro');
-        return;
-      }
-      document.getElementById('sub-name').value = '';
-      document.getElementById('sub-price').value = '';
-      document.getElementById('sub-days').value = '14';
-      openModal('sub-modal');
-    }
-
-    function fillSubPreset(name, price, days) {
-      triggerHaptic('light');
-      document.getElementById('sub-name').value = name;
-      document.getElementById('sub-price').value = price;
-      document.getElementById('sub-days').value = days;
-    }
-
-    function deleteSubscription(id) {
-      const idx = state.subscriptions.findIndex((s) => s.id === id);
-      if (idx === -1) return;
-      const [removed] = state.subscriptions.splice(idx, 1);
-      saveState();
-      triggerHaptic('light');
-      renderSocialTab();
-      showToast(`Подписка «${removed.name}» удалена`, 'info', () => {
-        state.subscriptions.push(removed);
-        saveState();
-        triggerHaptic('success');
-        renderSocialTab();
-      });
-    }
-
-    /**
-     * Чаевые и расчёт сплиттера чеков.
-     */
-    function renderTipButtons() {
-      const container = document.getElementById('tip-buttons');
-      container.innerHTML = TIP_OPTIONS.map((pct) => {
-        const active = state.splitTipPercent === pct;
-        return `
-          <button
-            type="button"
-            onclick="selectSplitTip(${pct})"
-            class="py-2 rounded-xl text-xs font-bold border transition active:scale-95 ${
-              active
-                ? 'bg-tg-blue/20 border-tg-blue text-white'
-                : 'bg-tg-bg border-tg-border text-tg-muted hover:text-white'
-            }"
-          >
-            ${pct}%
-          </button>
-        `;
-      }).join('');
-    }
-
-    function selectSplitTip(pct) {
-      triggerHaptic('light');
-      state.splitTipPercent = pct;
-      renderTipButtons();
-      updateBillSplit();
-    }
-
-    function changeSplitPeople(delta) {
-      triggerHaptic('light');
-      state.splitPeople = Math.max(2, Math.min(30, state.splitPeople + delta));
-      document.getElementById('split-people-count').textContent = state.splitPeople;
-      updateBillSplit();
-    }
-
-    function getBillSplitNumbers() {
-      const baseAmount = Math.max(0, Number(document.getElementById('split-amount').value) || 0);
-      const tipAmount = Math.round(baseAmount * (state.splitTipPercent / 100));
-      const grandTotal = baseAmount + tipAmount;
-      const perPerson = state.splitPeople > 0 ? Math.ceil(grandTotal / state.splitPeople) : 0;
-      return { baseAmount, tipAmount, grandTotal, perPerson };
-    }
-
-    function updateBillSplit() {
-      const { tipAmount, grandTotal, perPerson } = getBillSplitNumbers();
-      document.getElementById('split-tip-rub').textContent = `+${formatRub(tipAmount)}`;
-      document.getElementById('split-grand-total').textContent = formatRub(grandTotal);
-      document.getElementById('split-per-person').textContent = formatRub(perPerson);
-    }
-
-    function buildBillSharePayload() {
-      const { baseAmount, grandTotal, perPerson } = getBillSplitNumbers();
-      const desc = (document.getElementById('split-desc').value || 'Общий счёт').trim();
-      const botUrl = `https://t.me/${BOT_USERNAME}?start=split`;
-      const tipLine = state.splitTipPercent > 0 ? ` (включая чаевые ${state.splitTipPercent}%)` : '';
-      const text = `💸 Делим счёт «${desc}»\nИтого: ${formatRub(grandTotal)}${tipLine} на ${state.splitPeople} чел.\n👉 С каждого по: ${formatRub(perPerson)}\n\nПосчитано за секунду в Spendly:`;
-      return { botUrl, text, baseAmount };
-    }
-
-    function shareBillToTelegram() {
-      triggerHaptic('medium');
-      const { botUrl, text, baseAmount } = buildBillSharePayload();
-      if (baseAmount <= 0) {
-        showToast('Введите сумму чека больше 0 ₽', 'warning');
-        return;
-      }
-
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(botUrl)}&text=${encodeURIComponent(text)}`;
-
-      try {
-        if (tg && typeof tg.openTelegramLink === 'function' && isInsideTelegram) {
-          tg.openTelegramLink(shareUrl);
-        } else {
-          window.open(shareUrl, '_blank', 'noopener,noreferrer');
-        }
-        showToast('Открываем Telegram для отправки счёта...', 'success');
-      } catch (err) {
-        copyBillShareText();
-      }
-    }
-
-    /**
-     * Копирование текста через document.execCommand('copy') для совместимости с iFrame.
-     */
-    function copyBillShareText() {
-      const { botUrl, text } = buildBillSharePayload();
-      const fullText = `${text} ${botUrl}`;
-
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = fullText;
-        ta.setAttribute('readonly', '');
-        ta.className = 'fixed -left-[9999px] top-0';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        triggerHaptic('success');
-        showToast('Счёт скопирован в буфер обмена!', 'success');
-      } catch (err) {
-        showToast('Не удалось скопировать текст', 'warning');
-      }
-    }
-
-    /* ===================================================================== */
-    /* ВКЛАДКА 4: PRO ⭐ (50 ⭐ / 100 ⭐ / 500 ⭐ И ОПЛАТА STARS)             */
-    /* ===================================================================== */
-
-    function renderProTab() {
-      const plansContainer = document.getElementById('pro-plans-container');
-
-      plansContainer.innerHTML = PRO_PLAN_ORDER.map((planId) => {
-        const plan = PRO_PLANS[planId];
-        const isSelected = state.selectedProPlan === planId;
-        const isActiveCurrent = state.isPro && state.proPlan === planId;
-
-        return `
-          <button
-            type="button"
-            onclick="selectProPlan('${planId}')"
-            class="w-full text-left rounded-2xl p-4 border-2 transition active:scale-[0.98] flex items-center justify-between gap-3 ${
-              isSelected
-                ? 'bg-tg-card border-tg-star shadow-lg shadow-tg-star/10'
-                : 'bg-tg-card/75 border-tg-border hover:border-tg-elevated'
-            }"
-          >
-            <div class="flex items-center gap-3 min-w-0">
-              <!-- Индикатор выбора (Radio) -->
-              <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition ${
-                isSelected ? 'border-tg-star bg-tg-star' : 'border-tg-muted/60'
-              }">
-                ${isSelected ? '<span class="w-2 h-2 rounded-full bg-[#1a1204]"></span>' : ''}
-              </div>
-
-              <div class="min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-sm font-extrabold text-white">${plan.name}</span>
-                  ${plan.badge ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${plan.badgeClass}">${plan.badge}</span>` : ''}
-                  ${isActiveCurrent ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-tg-green/20 text-tg-green">Активен</span>` : ''}
-                </div>
-                <p class="text-xs text-tg-muted mt-0.5">${plan.perMonthText}</p>
-              </div>
-            </div>
-
-            <div class="text-right shrink-0">
-              <span class="text-lg font-extrabold ${isSelected ? 'text-tg-star' : 'text-white'}">${plan.stars} ⭐</span>
-            </div>
-          </button>
-        `;
-      }).join('');
-
-      // Обновление динамической кнопки оплаты
-      const selectedPlan = PRO_PLANS[state.selectedProPlan] || PRO_PLANS.quarterly;
-      const ctaText = document.getElementById('pro-cta-text');
-      ctaText.textContent = `Оплатить ${selectedPlan.stars} ⭐`;
-
-      // Баннер активной подписки
-      const activeBanner = document.getElementById('pro-active-banner');
-      const activeMeta = document.getElementById('pro-active-meta');
-      if (state.isPro) {
-        const activePlanObj = PRO_PLANS[state.proPlan] || PRO_PLANS.quarterly;
-        activeBanner.classList.remove('hidden');
-        activeMeta.textContent = `Тариф: ${activePlanObj.name} (${activePlanObj.stars} ⭐) • Все функции открыты`;
+      const mapLock = document.getElementById("mapsLock");
+      if (d.locked_maps_count > 0) {
+        mapLock.classList.remove("hidden");
+        document.getElementById("mapsLockText").textContent =
+          `Скрыто ещё карт: ${d.locked_maps_count}`;
       } else {
-        activeBanner.classList.add('hidden');
+        mapLock.classList.add("hidden");
       }
     }
 
-    function selectProPlan(planId) {
-      if (!PRO_PLANS[planId]) return;
-      triggerHaptic('light');
-      state.selectedProPlan = planId;
-      saveState();
-      renderProTab();
+    function shareResult() {
+      if (!lastData) return showToast("Сначала сделайте анализ профиля");
+      const p = lastData.player;
+      const s = lastData.summary;
+      const topErr = lastData.mistakes[0] ? lastData.mistakes[0].title : "Без критических ошибок";
+      const text = `🎯 Мой разбор CS2 FACEIT (${p.nickname}, ${p.level} lvl · ${p.elo} ELO):\nИмпакт: ${s.impact_score}/100 | K/D ${s.avg_kd} | ADR ${s.avg_adr}\nГлавная ошибка: ${topErr}\nПроверь свой профиль:`;
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent("https://t.me/" + BOT_USERNAME)}&text=${encodeURIComponent(text)}`;
+      if (tg && tg.openTelegramLink) tg.openTelegramLink(shareUrl);
+      else window.open(shareUrl, "_blank");
     }
 
-    /**
-     * Запуск оплаты Telegram Stars:
-     * - При наличии бэкенда внутри Telegram вызывает нативный tg.openInvoice().
-     * - В браузере / демо открывает реалистичный bottom-sheet оплаты Telegram Stars.
-     */
-    async function initiateStarsPayment() {
-      triggerHaptic('medium');
-      const plan = PRO_PLANS[state.selectedProPlan] || PRO_PLANS.quarterly;
-
-      if (API_BASE_URL && isInsideTelegram && typeof tg?.openInvoice === 'function') {
-        const ctaText = document.getElementById('pro-cta-text');
-        const prevText = ctaText.textContent;
-        ctaText.textContent = 'Создаём инвойс Telegram Stars...';
-
-        try {
-          const response = await fetch(`${API_BASE_URL}/api/create-invoice`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              plan: plan.id,
-              stars: plan.stars,
-              initData: tg.initData
-            })
-          });
-
-          if (!response.ok) throw new Error('Ошибка сервера при создании инвойса');
-          const data = await response.json();
-          if (!data.invoiceUrl) throw new Error('Отсутствует invoiceUrl');
-
-          tg.openInvoice(data.invoiceUrl, (status) => {
-            if (status === 'paid') {
-              activateProSubscription(plan.id);
-            } else if (status === 'cancelled') {
-              showToast('Оплата отменена', 'info');
-            } else {
-              showToast('Платёж не завершён. Попробуйте ещё раз.', 'warning');
-            }
-          });
-        } catch (err) {
-          console.error('Ошибка Telegram Stars Invoice:', err);
-          showToast('Не удалось подключиться к серверу оплаты', 'warning');
-        } finally {
-          ctaText.textContent = prevText;
-        }
-        return;
+    async function buyPlan(planKey, btn) {
+      if (!tg || !tg.initData) {
+        return showToast("Откройте приложение внутри Telegram для оплаты Stars");
       }
-
-      // Фолбэк для браузера: реалистичный bottom-sheet Telegram Stars
-      document.getElementById('stars-sheet-title').textContent = `Spendly Pro — ${plan.name}`;
-      document.getElementById('stars-sheet-sub').textContent = `@${BOT_USERNAME} • ${plan.perMonthText}`;
-      document.getElementById('stars-sheet-price').textContent = `${plan.stars} ⭐`;
-      document.getElementById('demo-stars-balance').textContent = `${new Intl.NumberFormat('ru-RU').format(state.demoStarsBalance)} ⭐`;
-      document.getElementById('stars-confirm-label').textContent = `Подтвердить оплату ${plan.stars} ⭐`;
-      openModal('stars-sheet');
-    }
-
-    /**
-     * Подтверждение симуляции оплаты Telegram Stars в браузере.
-     */
-    function confirmDemoStarsPayment() {
-      const plan = PRO_PLANS[state.selectedProPlan] || PRO_PLANS.quarterly;
-      const btn = document.getElementById('stars-confirm-btn');
-      const label = document.getElementById('stars-confirm-label');
-
+      const orig = btn.textContent;
       btn.disabled = true;
-      label.textContent = 'Списание Telegram Stars...';
-      triggerHaptic('medium');
-
-      setTimeout(() => {
+      btn.textContent = "...";
+      try {
+        const res = await fetch(`${API_BASE}/api/create-invoice`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Telegram-Init-Data": tg.initData
+          },
+          body: JSON.stringify({ plan: planKey })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.invoice_url) throw new Error(data.error || "Ошибка счёта");
+        tg.openInvoice(data.invoice_url, (status) => {
+          if (status === "paid") {
+            showToast("Оплата прошла! Обновляем Pro...");
+            setTimeout(() => {
+              loadMe(true);
+              if (lastData) runAnalysis(lastData.player.nickname);
+            }, 1500);
+          } else if (status === "cancelled") {
+            showToast("Оплата отменена");
+          }
+        });
+      } catch (err) {
+        showToast(err.message || "Ошибка оплаты");
+      } finally {
         btn.disabled = false;
-        state.demoStarsBalance = Math.max(0, state.demoStarsBalance - plan.stars);
-        closeModal('stars-sheet');
-        activateProSubscription(plan.id);
-      }, 600);
-    }
-
-    /**
-     * Активация статуса Pro с праздничной анимацией и мгновенной разблокировкой всех функций.
-     */
-    function activateProSubscription(planId) {
-      const plan = PRO_PLANS[planId] || PRO_PLANS.quarterly;
-      state.isPro = true;
-      state.proPlan = plan.id;
-      saveState();
-      triggerHaptic('success');
-
-      renderHome();
-      renderAnalytics();
-      renderSocialTab();
-      renderProTab();
-
-      // Лёгкая анимация золотой звезды на экране Pro
-      const badge = document.getElementById('pro-star-badge');
-      if (badge) {
-        badge.classList.add('scale-110', 'animate-bounce');
-        setTimeout(() => badge.classList.remove('scale-110', 'animate-bounce'), 1200);
+        btn.textContent = orig;
       }
-
-      showToast(`⭐ Spendly Pro (${plan.name}) активирован! AI-советник и Excel открыты.`, 'success');
     }
 
-    /**
-     * Сброс Pro-статуса для повторного тестирования.
-     */
-    function resetDemoPro() {
-      state.isPro = false;
-      state.proPlan = null;
-      state.demoStarsBalance = 1200;
-      saveState();
-      triggerHaptic('light');
-      renderHome();
-      renderAnalytics();
-      renderSocialTab();
-      renderProTab();
-      showToast('Статус Pro сброшен на Free (для теста)', 'info');
-    }
-
-    /* ===================================================================== */
-    /* ОБРАБОТЧИКИ ФОРМ И СОБЫТИЙ                                            */
-    /* ===================================================================== */
-
-    function bindEvents() {
-      const smartInput = document.getElementById('smart-input');
-
-      smartInput.addEventListener('input', updateSmartPreview);
-
-      document.getElementById('smart-input-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const parsed = parseSmartExpense(smartInput.value);
-        if (!parsed) {
-          triggerHaptic('warning');
-          showToast('Напиши название и сумму, например: «Кофе 350»', 'warning');
-          return;
-        }
-        addTransaction(parsed.title, parsed.amount, parsed.category);
-        smartInput.value = '';
-        state.pinnedQuickCategory = null;
-        renderQuickCategoryChips();
-        updateSmartPreview();
-      });
-
-      document.getElementById('manual-expense-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const amount = Number(document.getElementById('exp-amount').value);
-        const title = document.getElementById('exp-title').value.trim();
-        if (!amount || amount <= 0 || !title) {
-          showToast('Укажите сумму и название расхода', 'warning');
-          return;
-        }
-        addTransaction(title, amount, state.modalSelectedCategory);
-        closeModal('expense-modal');
-      });
-
-      document.getElementById('budget-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const val = Math.round(Number(document.getElementById('budget-input').value));
-        if (!val || val < 1000) {
-          showToast('Лимит бюджета должен быть от 1 000 ₽', 'warning');
-          return;
-        }
-        state.budget = val;
-        saveState();
-        triggerHaptic('success');
-        closeModal('budget-modal');
-        renderHome();
-        showToast(`Лимит обновлён: ${formatRub(val)}`, 'success');
-      });
-
-      document.getElementById('sub-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const name = document.getElementById('sub-name').value.trim();
-        const price = Math.round(Number(document.getElementById('sub-price').value));
-        const daysLeft = Math.max(1, Math.min(31, Math.round(Number(document.getElementById('sub-days').value))));
-        if (!name || !price || price <= 0) return;
-
-        const palette = ['#2AABEE', '#FF9F0A', '#34C759', '#BF5AF2', '#FF375F'];
-        state.subscriptions.push({
-          id: 'sub_' + Date.now(),
-          name,
-          price,
-          daysLeft,
-          color: palette[state.subscriptions.length % palette.length]
-        });
-        saveState();
-        triggerHaptic('success');
-        closeModal('sub-modal');
-        renderSocialTab();
-        showToast(`Подписка «${name}» добавлена`, 'success');
-      });
-
-      // Закрытие модальных окон по клику на затемнённый фон
-      ['expense-modal', 'budget-modal', 'sub-modal', 'stars-sheet'].forEach((id) => {
-        document.getElementById(id).addEventListener('click', (e) => {
-          if (e.target.id === id) closeModal(id);
-        });
-      });
-    }
-
-    /* ===================================================================== */
-    /* СТАРТ ПРИЛОЖЕНИЯ                                                      */
-    /* ===================================================================== */
-
-    document.addEventListener('DOMContentLoaded', () => {
-      initTelegram();
-      loadState();
-      bindEvents();
-      renderHome();
-      renderAnalytics();
-      renderSocialTab();
-      renderProTab();
-    });
+    loadMe(false);
   </script>
 </body>
 </html>
