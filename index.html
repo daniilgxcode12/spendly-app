@@ -188,14 +188,36 @@
   <!-- ВКЛАДКА 4: ЛОББИ И 1V1 -->
   <div id="tab-social" class="tab">
     <div class="card">
-      <div class="card-title">🕵️ Скаут лобби и бан карт</div>
-      <div class="sub">Вставь ссылку на комнату матча FACEIT или просканируй свой последний/текущий матч.</div>
-      <div class="row">
-        <input id="lobbyInput" type="text" placeholder="https://www.faceit.com/.../room/1-..." />
-        <button class="btn" onclick="scoutLobby(false)">Скаут</button>
+      <div class="card-title">
+        <span>🕵️ Скаут лобби и бан карт</span>
+        <span id="lobbyProBadge" class="badge">PRO</span>
       </div>
-      <button class="btn secondary full sm" onclick="scoutLobby(true)">⚡ Пробить мой текущий / последний матч</button>
-      <div id="lobbyResult" style="margin-top:10px;"></div>
+
+      <div id="lobbyLockedBox" style="display:none;">
+        <div class="sub" style="margin-bottom:8px;">
+          <strong>Сканнер матча доступен в StatRush Pro.</strong> Помогает за секунды разобраться в составе соперников до старта игры:
+        </div>
+        <div class="mistake low" style="margin-top:0;">
+          <div class="mistake-h">Что делает сканнер матча:</div>
+          <div class="mistake-t">
+            • Анализирует всех 5 игроков соперника по ссылке на комнату или по твоему матчу<br />
+            • Показывает уровень, ELO, K/D, ADR и текущие серии побед или поражений<br />
+            • Выделяет главного керри врагов и уязвимого игрока на тильте<br />
+            • Подсказывает <strong>2 главные карты на бан</strong> и сильные варианты для пика
+          </div>
+        </div>
+        <button class="btn full" onclick="openProTab()">Открыть сканнер в StatRush Pro ⭐</button>
+      </div>
+
+      <div id="lobbyActiveBox">
+        <div class="sub">Вставь ссылку на комнату матча FACEIT или просканируй свой последний/текущий матч.</div>
+        <div class="row">
+          <input id="lobbyInput" type="text" placeholder="https://www.faceit.com/.../room/1-..." />
+          <button class="btn" onclick="scoutLobby(false)">Скаут</button>
+        </div>
+        <button class="btn secondary full sm" onclick="scoutLobby(true)">⚡ Пробить мой текущий / последний матч</button>
+        <div id="lobbyResult" style="margin-top:10px;"></div>
+      </div>
     </div>
 
     <div class="card">
@@ -224,7 +246,7 @@
 
     <div class="card">
       <div class="card-title">⭐ StatRush Pro</div>
-      <div class="sub">Анализ 20 матчей вместо 5, все скрытые ошибки, Тильт-детектор и полная статистика по всем картам.</div>
+      <div class="sub">Сканнер лобби и бан карт, анализ 20 матчей вместо 5, все скрытые ошибки, Тильт-детектор и полная статистика по всем картам.</div>
 
       <div class="plan-card">
         <div>
@@ -276,6 +298,7 @@
 
     let currentData = null;
     let notifyEnabled = true;
+    let isCurrentUserPro = false;
 
     function showToast(msg) {
       const t = document.getElementById("toast");
@@ -296,7 +319,32 @@
       document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
       document.querySelectorAll(".nav-btn").forEach(el => el.classList.remove("active"));
       document.getElementById("tab-" + name).classList.add("active");
-      btn.classList.add("active");
+      if (btn) btn.classList.add("active");
+    }
+
+    function openProTab() {
+      const proBtn = document.querySelectorAll(".nav-btn")[4];
+      switchTab("pro", proBtn);
+    }
+
+    function syncLobbyAccessUI(isPro) {
+      isCurrentUserPro = Boolean(isPro);
+      const lockedBox = document.getElementById("lobbyLockedBox");
+      const activeBox = document.getElementById("lobbyActiveBox");
+      const badge = document.getElementById("lobbyProBadge");
+      if (!lockedBox || !activeBox || !badge) return;
+
+      if (isCurrentUserPro) {
+        lockedBox.style.display = "none";
+        activeBox.style.display = "block";
+        badge.textContent = "PRO ACTIVE";
+        badge.classList.add("pro");
+      } else {
+        lockedBox.style.display = "block";
+        activeBox.style.display = "none";
+        badge.textContent = "PRO";
+        badge.classList.remove("pro");
+      }
     }
 
     async function initApp() {
@@ -307,6 +355,7 @@
         ]);
         const me = await meRes.json();
         updateProBadge(me.is_pro);
+        syncLobbyAccessUI(me.is_pro);
         if (me.faceit_nick) {
           document.getElementById("nickInput").value = me.faceit_nick;
           document.getElementById("cmpNick1").value = me.faceit_nick;
@@ -320,6 +369,7 @@
         updateNotifyBtn();
       } catch (e) {
         console.error(e);
+        syncLobbyAccessUI(false);
       }
     }
 
@@ -353,6 +403,7 @@
 
         currentData = data;
         updateProBadge(data.is_pro);
+        syncLobbyAccessUI(data.is_pro);
         document.getElementById("cmpNick1").value = data.player.nickname;
         renderProfile(data);
       } catch (e) {
@@ -390,7 +441,6 @@
         </div>
       `).join("") || `<div class="sub">Нет недавних матчей CS2</div>`;
 
-      // Ошибки и тильт
       const tilt = data.tilt;
       document.getElementById("tiltBox").innerHTML = tilt.locked
         ? `🔒 <strong>Тильт-детектор доступен в Pro</strong> — откроется анализ серий поражений и стоп-лосс.`
@@ -407,7 +457,6 @@
         ? `<div class="sub" style="margin-top:10px;">🔒 Скрыто ещё ошибок: <strong>${data.locked_mistakes_count}</strong> (доступно в StatRush Pro)</div>`
         : "");
 
-      // Карты
       const mapsEl = document.getElementById("mapsList");
       mapsEl.innerHTML = (data.maps || []).map(mp => `
         <div class="match-item">
@@ -453,6 +502,12 @@
     }
 
     async function scoutLobby(useLastMatch) {
+      if (!isCurrentUserPro) {
+        showToast("🔒 Сканнер матча доступен в StatRush Pro");
+        openProTab();
+        return;
+      }
+
       const url = useLastMatch ? "" : document.getElementById("lobbyInput").value.trim();
       if (!useLastMatch && !url) return showToast("Вставь ссылку на комнату матча FACEIT");
       const box = document.getElementById("lobbyResult");
@@ -466,6 +521,10 @@
         const data = await res.json();
         if (!res.ok) {
           box.innerHTML = "";
+          if (data.pro_required || res.status === 403) {
+            syncLobbyAccessUI(false);
+            openProTab();
+          }
           return showToast(data.error || "Не удалось просканировать лобби");
         }
 
