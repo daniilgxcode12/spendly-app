@@ -3,1016 +3,595 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>StatRush — CS2 FACEIT Аналитика</title>
+  <title>StatRush CS2 — FACEIT Аналитика</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
-      --bg: #07090e;
-      --glass: rgba(20, 25, 38, 0.65);
-      --glass-border: rgba(255, 255, 255, 0.11);
-      --glass-highlight: rgba(255, 255, 255, 0.18);
-      --text: #f5f7fb;
-      --muted: #94a0b8;
+      --bg: #0b0e14;
+      --card: #131823;
+      --card-2: #19202e;
+      --border: #252e42;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
       --accent: #ff5500;
+      --accent-soft: rgba(255, 85, 0, 0.14);
       --green: #22c55e;
       --red: #ef4444;
-      --gold: #f59e0b;
-      --lvl-color: #ff5500;
+      --yellow: #eab308;
+      --blue: #38bdf8;
     }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 14px 14px 86px; min-height: 100vh; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .logo { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+    .logo span { color: var(--accent); }
+    .badge { font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 999px; background: var(--card-2); border: 1px solid var(--border); color: var(--muted); }
+    .badge.pro { background: var(--accent-soft); border-color: var(--accent); color: #ff8c42; }
 
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 14px; margin-bottom: 12px; }
+    .card-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .sub { font-size: 12.5px; color: var(--muted); line-height: 1.4; margin-bottom: 10px; }
 
-    button:focus, input:focus { outline: none; }
-
-    body {
-      margin: 0;
-      padding: 16px 14px 104px;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
-      background-color: var(--bg);
-      background-image:
-        radial-gradient(circle at 12% 6%, rgba(255, 85, 0, 0.25), transparent 42%),
-        radial-gradient(circle at 88% 18%, rgba(245, 158, 11, 0.16), transparent 44%),
-        radial-gradient(circle at 50% 92%, rgba(255, 106, 26, 0.14), transparent 50%);
-      background-attachment: fixed;
-      color: var(--text);
-      min-height: 100vh;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      padding: 0 2px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 21px;
-      font-weight: 900;
-      letter-spacing: -0.4px;
-    }
-
-    .brand-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #ff5500, #ffb700);
-      box-shadow: 0 0 12px rgba(255, 85, 0, 0.85);
-    }
-
-    .brand span {
-      background: linear-gradient(135deg, #ff6a1a, #ffb347);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .badge {
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.06);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      color: var(--muted);
-      border: 1px solid var(--glass-border);
-      cursor: pointer;
-    }
-
-    .badge.pro {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(255, 85, 0, 0.22));
-      color: #ffd166;
-      border-color: rgba(245, 158, 11, 0.5);
-      box-shadow: 0 0 18px rgba(245, 158, 11, 0.22);
-    }
-
-    .glass-card {
-      position: relative;
-      background: var(--glass);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border: 1px solid var(--glass-border);
-      border-top-color: var(--glass-highlight);
-      border-radius: 20px;
-      padding: 16px;
-      margin-bottom: 14px;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-    }
-
-    .hero-card {
-      background: linear-gradient(145deg, rgba(255, 85, 0, 0.16) 0%, rgba(20, 25, 38, 0.74) 55%, rgba(16, 20, 32, 0.86) 100%);
-      border-color: rgba(255, 110, 40, 0.28);
-      overflow: hidden;
-    }
-
-    .label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--muted);
-      margin-bottom: 10px;
-      font-weight: 700;
-    }
-
-    .search-row {
-      display: flex;
-      gap: 8px;
-    }
-
+    .row { display: flex; gap: 8px; }
     input {
-      width: 100%;
-      padding: 13px 14px;
-      border-radius: 14px;
-      border: 1px solid var(--glass-border);
-      background: rgba(10, 13, 20, 0.55);
-      color: var(--text);
-      font-size: 14px;
+      flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+      padding: 11px 12px; color: var(--text); font-size: 14px; outline: none;
     }
-
-    input:focus {
-      border-color: rgba(255, 85, 0, 0.65);
-      box-shadow: 0 0 0 3px rgba(255, 85, 0, 0.15);
-    }
-
+    input:focus { border-color: var(--accent); }
     .btn {
-      width: 100%;
-      padding: 13px 16px;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      background: linear-gradient(135deg, rgba(255, 85, 0, 0.92), rgba(255, 136, 0, 0.88));
-      color: #fff;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 8px 20px rgba(255, 85, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
-      transition: transform 0.12s ease;
+      background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 11px 16px;
+      font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity .15s;
     }
+    .btn:active { opacity: 0.8; }
+    .btn.secondary { background: var(--card-2); border: 1px solid var(--border); color: var(--text); }
+    .btn.full { width: 100%; margin-top: 8px; }
+    .btn.sm { padding: 8px 12px; font-size: 12.5px; }
 
-    .btn:active { transform: scale(0.98); }
-    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-    .btn.compact { width: auto; white-space: nowrap; padding: 0 15px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+    .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 10px 8px; text-align: center; }
+    .stat-lbl { font-size: 10.5px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+    .stat-val { font-size: 16px; font-weight: 800; }
 
-    .btn.glass {
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-top-color: rgba(255, 255, 255, 0.28);
-      color: var(--text);
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.16);
-    }
+    .player-head { display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 52px; height: 52px; border-radius: 14px; background: var(--card-2); object-fit: cover; border: 1px solid var(--border); }
+    .lvl-pill { padding: 4px 9px; border-radius: 8px; font-size: 12px; font-weight: 800; background: var(--accent-soft); color: #ff8c42; border: 1px solid var(--accent); }
 
-    .btn.gold {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(255, 94, 0, 0.92));
-      color: #0f1115;
-      font-weight: 800;
-    }
-
-    .icon-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 11px;
-      border: 1px solid var(--glass-border);
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--muted);
-      font-size: 15px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .profile-header {
-      display: flex;
-      align-items: center;
-      gap: 13px;
-      margin-bottom: 14px;
-    }
-
-    .avatar-wrap {
-      position: relative;
-      width: 58px;
-      height: 58px;
-      flex-shrink: 0;
-    }
-
-    .avatar {
-      width: 58px;
-      height: 58px;
-      border-radius: 17px;
-      object-fit: cover;
-      background: #141824;
-      border: 2px solid var(--lvl-color);
-      box-shadow: 0 0 18px color-mix(in srgb, var(--lvl-color) 45%, transparent);
-    }
-
-    .lvl-badge {
-      position: absolute;
-      right: -5px;
-      bottom: -5px;
-      min-width: 24px;
-      height: 24px;
-      padding: 0 5px;
-      border-radius: 8px;
-      background: var(--lvl-color);
-      color: #0a0c10;
-      font-size: 12px;
-      font-weight: 900;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 2px solid #0e121b;
-    }
-
-    .player-meta { flex: 1; min-width: 0; }
-    .nick-row { display: flex; align-items: center; gap: 6px; }
-    .nick { font-size: 19px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .country-tag {
-      font-size: 10px;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--muted);
-    }
-
-    .elo-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 5px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.09);
+    .match-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 9px 10px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); margin-top: 7px;
       font-size: 13px;
-      font-weight: 800;
-      color: #ffb347;
     }
+    .tag-w { color: var(--green); font-weight: 800; }
+    .tag-l { color: var(--red); font-weight: 800; }
 
-    .elo-progress-wrap { margin-bottom: 14px; }
-    .elo-progress-labels {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      color: var(--muted);
-      margin-bottom: 5px;
-      font-weight: 600;
-    }
-
-    .elo-bar {
-      height: 6px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
-      overflow: hidden;
-    }
-
-    .elo-bar-fill {
-      height: 100%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, var(--accent), #ffb700);
-      transition: width 0.35s ease;
-    }
-
-    .switch-box {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--glass-border);
-    }
-
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .kpi {
-      background: rgba(255, 255, 255, 0.045);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      padding: 10px 6px;
-      text-align: center;
-    }
-
-    .kpi-val { font-size: 16px; font-weight: 800; }
-    .kpi-lbl { font-size: 10px; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
-
-    .score-box {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      background: linear-gradient(135deg, rgba(255, 85, 0, 0.16), rgba(245, 158, 11, 0.08));
-      border: 1px solid rgba(255, 110, 40, 0.25);
-      border-radius: 16px;
-      padding: 12px 14px;
-    }
-
-    .ring {
-      --p: 0;
-      width: 54px;
-      height: 54px;
-      border-radius: 50%;
-      background: conic-gradient(#ff6a1a calc(var(--p) * 1%), rgba(255, 255, 255, 0.1) 0);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .ring-inner {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: #121723;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      font-weight: 900;
-      color: #ff8c42;
-    }
-
-    .match-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 11px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      gap: 10px;
-    }
-
-    .match-row:last-child { border-bottom: none; padding-bottom: 0; }
-
-    .wl {
-      width: 30px;
-      height: 30px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 900;
-      font-size: 13px;
-      flex-shrink: 0;
-    }
-
-    .wl.win { background: rgba(34, 197, 94, 0.18); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.35); }
-    .wl.loss { background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); }
-
-    .m-main { flex: 1; min-width: 0; }
-    .m-map { font-size: 14px; font-weight: 700; }
-    .m-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-    .m-stats { text-align: right; font-size: 13px; font-weight: 700; white-space: nowrap; }
-
-    .mistake {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      border-radius: 15px;
-      padding: 13px;
-      margin-bottom: 10px;
-      border-left: 4px solid var(--accent);
-    }
-
-    .mistake.high { border-left-color: var(--red); }
-    .mistake.medium { border-left-color: var(--gold); }
+    .mistake { background: var(--bg); border-left: 3px solid var(--accent); border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
+    .mistake.medium { border-left-color: var(--yellow); }
     .mistake.low { border-left-color: var(--green); }
+    .mistake-h { font-size: 13.5px; font-weight: 700; margin-bottom: 3px; }
+    .mistake-m { font-size: 11.5px; color: #ff8c42; margin-bottom: 4px; font-weight: 600; }
+    .mistake-t { font-size: 12.5px; color: var(--muted); line-height: 1.38; }
 
-    .mistake-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
-    .mistake-metric { font-size: 12px; color: #fbbf24; font-weight: 700; margin-bottom: 6px; }
-    .mistake-tip { font-size: 13px; color: #dbe2ef; line-height: 1.45; }
-
-    .lock-box {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(255, 85, 0, 0.08));
-      border: 1px dashed rgba(245, 158, 11, 0.45);
-      border-radius: 16px;
-      padding: 15px;
-      text-align: center;
-      margin-top: 10px;
-    }
-
-    .map-row { margin-bottom: 13px; }
-    .map-row:last-child { margin-bottom: 0; }
-    .map-head { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; margin-bottom: 6px; }
-    .bar-bg { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #16a34a, #4ade80); }
-    .bar-fill.bad { background: linear-gradient(90deg, #dc2626, #f87171); }
-    .bar-fill.mid { background: linear-gradient(90deg, #d97706, #fbbf24); }
+    .cmp-row { margin-top: 10px; }
+    .cmp-top { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; margin-bottom: 4px; }
+    .cmp-bar { height: 7px; background: var(--bg); border-radius: 99px; overflow: hidden; display: flex; }
+    .cmp-l { background: var(--accent); height: 100%; }
+    .cmp-r { background: var(--blue); height: 100%; }
 
     .plan-card {
-      background: rgba(255, 255, 255, 0.045);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 12px; margin-top: 9px;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
     }
-
-    .plan-card.featured {
-      border-color: rgba(245, 158, 11, 0.55);
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(255, 85, 0, 0.1));
-    }
-
-    .note { font-size: 13px; color: var(--muted); line-height: 1.45; }
-    .section { display: none; }
-    .section.active { display: block; }
-    .hidden { display: none !important; }
-
-    .nav-wrap {
-      position: fixed;
-      left: 12px;
-      right: 12px;
-      bottom: calc(10px + env(safe-area-inset-bottom));
-      z-index: 25;
-    }
+    .plan-card.best { border-color: var(--accent); background: linear-gradient(180deg, rgba(255,85,0,0.08), var(--bg)); }
 
     .nav {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      background: rgba(16, 20, 31, 0.8);
-      backdrop-filter: blur(22px);
-      -webkit-backdrop-filter: blur(22px);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      border-top-color: rgba(255, 255, 255, 0.24);
-      border-radius: 20px;
-      padding: 6px;
-      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
+      position: fixed; bottom: 0; left: 0; right: 0; background: rgba(19, 24, 35, 0.96);
+      backdrop-filter: blur(10px); border-top: 1px solid var(--border);
+      display: grid; grid-template-columns: repeat(5, 1fr); padding: 7px 6px 10px; z-index: 50;
     }
-
-    .nav button {
-      background: transparent;
-      border: none;
-      border-radius: 14px;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 700;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      padding: 7px 4px;
-      cursor: pointer;
+    .nav-btn {
+      background: none; border: none; color: var(--muted); font-size: 10.5px; font-weight: 600;
+      display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer;
     }
+    .nav-btn.active { color: var(--accent); }
+    .nav-ico { font-size: 17px; }
 
-    .nav button span.icon { font-size: 17px; line-height: 1.1; }
-    .nav button.active {
-      color: #fff;
-      background: linear-gradient(135deg, rgba(255, 85, 0, 0.35), rgba(255, 140, 0, 0.18));
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    }
-
+    .tab { display: none; }
+    .tab.active { display: block; }
     .toast {
-      position: fixed;
-      left: 16px;
-      right: 16px;
-      bottom: 92px;
-      background: rgba(24, 30, 46, 0.94);
-      backdrop-filter: blur(16px);
-      color: #fff;
-      padding: 12px 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      font-size: 13px;
-      font-weight: 600;
-      text-align: center;
-      display: none;
-      z-index: 35;
+      position: fixed; top: 14px; left: 14px; right: 14px; background: #1e2638; border: 1px solid var(--accent);
+      color: #fff; padding: 11px 14px; border-radius: 12px; font-size: 13px; font-weight: 600;
+      z-index: 100; display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.45);
     }
+    .pill-warn { display: inline-block; padding: 3px 8px; border-radius: 7px; font-size: 11px; font-weight: 700; background: rgba(239,68,68,0.16); color: #f87171; margin-right: 4px; }
+    .pill-ok { display: inline-block; padding: 3px 8px; border-radius: 7px; font-size: 11px; font-weight: 700; background: rgba(34,197,94,0.16); color: #4ade80; margin-right: 4px; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="brand">
-      <div class="brand-dot"></div>
-      Stat<span>Rush</span> CS2
-    </div>
-    <div id="proBadge" class="badge" onclick="goToPro()">Free</div>
-  </div>
-
-  <!-- Вкладка 1: Профиль -->
-  <div id="tab-overview" class="section active">
-    <div id="connectCard" class="glass-card hero-card">
-      <div style="font-size:19px;font-weight:800;margin-bottom:6px;">Подключи профиль FACEIT</div>
-      <div class="note" style="margin-bottom:14px;">
-        Введи свой никнейм или ссылку на профиль FACEIT — загрузим ELO, последние матчи CS2, ошибки и советы.
-      </div>
-      <div class="search-row">
-        <input id="nickInputMain" type="text" placeholder="Ник или ссылка FACEIT" />
-        <button id="connectBtn" class="btn compact" onclick="runAnalysis(document.getElementById('nickInputMain').value)">Войти</button>
-      </div>
-    </div>
-
-    <div id="accountHero" class="glass-card hero-card hidden">
-      <div class="profile-header">
-        <div class="avatar-wrap">
-          <img id="pAvatar" class="avatar" src="" alt="" />
-          <div id="pLevel" class="lvl-badge">1</div>
-        </div>
-        <div class="player-meta">
-          <div class="nick-row">
-            <div id="pNick" class="nick">Player</div>
-            <span id="pCountry" class="country-tag hidden">RU</span>
-          </div>
-          <div class="elo-pill">⚡ <span id="pElo">0 ELO</span></div>
-        </div>
-        <button class="icon-btn" title="Обновить" onclick="refreshCurrent()">↻</button>
-        <button class="icon-btn" title="Сменить ник" onclick="toggleSwitchBox()">⇄</button>
-      </div>
-
-      <div class="elo-progress-wrap">
-        <div class="elo-progress-labels">
-          <span id="eloCurLbl">Уровень 1</span>
-          <span id="eloNextLbl">До 2 lvl: —</span>
-        </div>
-        <div class="elo-bar">
-          <div id="eloBarFill" class="elo-bar-fill" style="width: 25%;"></div>
-        </div>
-      </div>
-
-      <div class="kpi-grid">
-        <div class="kpi"><div id="kKd" class="kpi-val">0.00</div><div class="kpi-lbl">K/D</div></div>
-        <div class="kpi"><div id="kAdr" class="kpi-val">0</div><div class="kpi-lbl">ADR</div></div>
-        <div class="kpi"><div id="kHs" class="kpi-val">0%</div><div class="kpi-lbl">HS%</div></div>
-        <div class="kpi"><div id="kWr" class="kpi-val">0%</div><div class="kpi-lbl">Winrate</div></div>
-      </div>
-
-      <div class="score-box">
-        <div>
-          <div style="font-size:14px;font-weight:800;">Индекс импакта</div>
-          <div id="scoreSub" class="note" style="font-size:12px;">По последним матчам CS2</div>
-        </div>
-        <div id="impactRing" class="ring" style="--p: 0;">
-          <div id="impactScore" class="ring-inner">0</div>
-        </div>
-      </div>
-
-      <div id="switchBox" class="switch-box hidden">
-        <div class="label">Сменить профиль FACEIT</div>
-        <div class="search-row">
-          <input id="nickInputSwitch" type="text" placeholder="Новый ник или ссылка" />
-          <button id="switchBtn" class="btn compact" onclick="runAnalysis(document.getElementById('nickInputSwitch').value)">Найти</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="matchesCard" class="glass-card hidden">
-      <div id="matchesTitle" class="label">Последние матчи</div>
-      <div id="matchesList"></div>
-    </div>
-  </div>
-
-  <!-- Вкладка 2: Ошибки -->
-  <div id="tab-coach" class="section">
-    <div id="coachEmpty" class="glass-card">
-      <div class="note">Сначала подключи профиль FACEIT на вкладке «Профиль».</div>
-    </div>
-
-    <div id="coachContent" class="hidden">
-      <div class="glass-card">
-        <div class="label">Найденные ошибки и советы</div>
-        <div id="mistakesList"></div>
-        <div id="mistakesLock" class="lock-box hidden">
-          <div id="mistakesLockText" style="font-size:14px;font-weight:800;margin-bottom:6px;"></div>
-          <div class="note" style="margin-bottom:12px;">В StatRush Pro открывается разбор 20 игр, все ошибки и Тильт-детектор.</div>
-          <button class="btn gold" onclick="goToPro()">Открыть Pro за 100 ⭐</button>
-        </div>
-      </div>
-
-      <div class="glass-card">
-        <div class="label">Тильт-детектор</div>
-        <div id="tiltBlock"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Вкладка 3: Карты -->
-  <div id="tab-maps" class="section">
-    <div id="mapsEmpty" class="glass-card">
-      <div class="note">Сначала подключи профиль FACEIT на вкладке «Профиль».</div>
-    </div>
-
-    <div id="mapsContent" class="hidden">
-      <div class="glass-card">
-        <div class="label">Рекомендация на вето</div>
-        <div id="vetoAdvice" class="note"></div>
-      </div>
-
-      <div class="glass-card">
-        <div class="label">Винрейт по картам</div>
-        <div id="mapsList"></div>
-        <div id="mapsLock" class="lock-box hidden">
-          <div id="mapsLockText" style="font-size:14px;font-weight:800;margin-bottom:10px;"></div>
-          <button class="btn gold" onclick="goToPro()">Открыть все карты в Pro ⭐</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Вкладка 4: Pro -->
-  <div id="tab-pro" class="section">
-    <div class="glass-card hero-card">
-      <div class="label">Статус подписки</div>
-      <div id="proStatusText" style="font-size:18px;font-weight:800;">Тариф Free</div>
-      <div id="proStatusSub" class="note" style="margin-top:5px;">Оплата доступна в Telegram Stars и через Crypto Bot (USD).</div>
-    </div>
-
-    <div class="glass-card">
-      <div class="label">Тарифы StatRush Pro</div>
-
-      <div class="plan-card">
-        <div>
-          <div style="font-weight:700;">1 месяц</div>
-          <div class="note">30 дней · 100 ⭐ / $2.00</div>
-        </div>
-        <div style="display:flex;gap:6px;flex-shrink:0;">
-          <button class="btn compact" onclick="buyPlan('month', this)">100 ⭐</button>
-          <button class="btn glass compact" onclick="buyCryptoPlan('month', this)">$2.00</button>
-        </div>
-      </div>
-
-      <div class="plan-card featured">
-        <div>
-          <div style="font-weight:700;">3 месяца · Выгодно</div>
-          <div class="note">90 дней · 250 ⭐ / $5.00</div>
-        </div>
-        <div style="display:flex;gap:6px;flex-shrink:0;">
-          <button class="btn gold compact" onclick="buyPlan('quarter', this)">250 ⭐</button>
-          <button class="btn glass compact" onclick="buyCryptoPlan('quarter', this)">$5.00</button>
-        </div>
-      </div>
-
-      <div class="plan-card">
-        <div>
-          <div style="font-weight:700;">12 месяцев</div>
-          <div class="note">365 дней · 1000 ⭐ / $15.00</div>
-        </div>
-        <div style="display:flex;gap:6px;flex-shrink:0;">
-          <button class="btn compact" onclick="buyPlan('year', this)">1000 ⭐</button>
-          <button class="btn glass compact" onclick="buyCryptoPlan('year', this)">$15.00</button>
-        </div>
-      </div>
-
-      <button class="btn glass" style="margin-top:6px;" onclick="loadMe(true)">Обновить статус оплаты</button>
-    </div>
-  </div>
-
   <div id="toast" class="toast"></div>
 
-  <div class="nav-wrap">
-    <nav class="nav">
-      <button id="nav-overview" class="active" onclick="switchTab('overview', this)">
-        <span class="icon">🎯</span><span>Профиль</span>
-      </button>
-      <button id="nav-coach" onclick="switchTab('coach', this)">
-        <span class="icon">🧠</span><span>Ошибки</span>
-      </button>
-      <button id="nav-maps" onclick="switchTab('maps', this)">
-        <span class="icon">🗺️</span><span>Карты</span>
-      </button>
-      <button id="nav-pro" onclick="switchTab('pro', this)">
-        <span class="icon">⭐</span><span>Pro</span>
-      </button>
-    </nav>
+  <div class="header">
+    <div class="logo"><div class="dot"></div>Stat<span>Rush</span> CS2</div>
+    <div id="planBadge" class="badge">FREE</div>
   </div>
+
+  <!-- ВКЛАДКА 1: ПРОФИЛЬ -->
+  <div id="tab-profile" class="tab active">
+    <div class="card">
+      <div class="card-title">Подключи профиль FACEIT</div>
+      <div class="sub">Введи никнейм или ссылку на профиль FACEIT — загрузим ELO, последние матчи CS2, ошибки и советы.</div>
+      <div class="row">
+        <input id="nickInput" type="text" placeholder="Никнейм на FACEIT..." />
+        <button class="btn" onclick="loadProfile()">Войти</button>
+      </div>
+    </div>
+
+    <div id="profileContent" style="display:none;">
+      <div class="card">
+        <div class="player-head">
+          <img id="pAvatar" class="avatar" src="" alt="" />
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <strong id="pNick" style="font-size:17px;">—</strong>
+              <span id="pLvl" class="lvl-pill">1 lvl</span>
+            </div>
+            <div id="pElo" class="sub" style="margin:3px 0 0;">0 ELO</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="stat-lbl">Impact</div>
+            <div id="pImpact" style="font-size:20px; font-weight:800; color:var(--accent);">—</div>
+          </div>
+        </div>
+
+        <div class="grid-4">
+          <div class="stat-box"><div class="stat-lbl">K/D</div><div id="sKd" class="stat-val">—</div></div>
+          <div class="stat-box"><div class="stat-lbl">ADR</div><div id="sAdr" class="stat-val">—</div></div>
+          <div class="stat-box"><div class="stat-lbl">HS %</div><div id="sHs" class="stat-val">—</div></div>
+          <div class="stat-box"><div class="stat-lbl">Winrate</div><div id="sWr" class="stat-val">—</div></div>
+        </div>
+
+        <div class="grid-2" style="margin-top:10px;">
+          <button class="btn secondary sm" onclick="sendPngCard()">🖼 PNG-карточка в чат</button>
+          <button id="notifyBtn" class="btn secondary sm" onclick="toggleNotify()">🔔 Авто-отчёты: ВКЛ</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Последние матчи</span>
+          <span id="matchesPoolLbl" style="font-size:11.5px; color:var(--muted);">5 игр</span>
+        </div>
+        <div id="matchesList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ВКЛАДКА 2: ОШИБКИ И ТИЛЬТ -->
+  <div id="tab-mistakes" class="tab">
+    <div class="card">
+      <div class="card-title">Разбор ошибок и Тильт-детектор</div>
+      <div id="tiltBox" class="sub">Загрузи профиль на первой вкладке, чтобы увидеть персональные точки роста.</div>
+      <div id="mistakesList"></div>
+    </div>
+  </div>
+
+  <!-- ВКЛАДКА 3: КАРТЫ -->
+  <div id="tab-maps" class="tab">
+    <div class="card">
+      <div class="card-title">Пул карт CS2</div>
+      <div class="sub">Винрейт и средний урон по картам — помогает на стадии вето.</div>
+      <div id="mapsList"></div>
+    </div>
+  </div>
+
+  <!-- ВКЛАДКА 4: ЛОББИ И 1V1 -->
+  <div id="tab-social" class="tab">
+    <div class="card">
+      <div class="card-title">🕵️ Скаут лобби и бан карт</div>
+      <div class="sub">Вставь ссылку на комнату матча FACEIT или просканируй свой последний/текущий матч.</div>
+      <div class="row">
+        <input id="lobbyInput" type="text" placeholder="https://www.faceit.com/.../room/1-..." />
+        <button class="btn" onclick="scoutLobby(false)">Скаут</button>
+      </div>
+      <button class="btn secondary full sm" onclick="scoutLobby(true)">⚡ Пробить мой текущий / последний матч</button>
+      <div id="lobbyResult" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚔️ Дуэль 1v1 с другом</div>
+      <div class="sub">Сравни свой K/D, ADR, ELO и Impact Score с тиммейтом.</div>
+      <div class="row">
+        <input id="cmpNick1" type="text" placeholder="Твой ник" />
+        <input id="cmpNick2" type="text" placeholder="Ник друга" />
+      </div>
+      <button class="btn full" onclick="comparePlayers()">Сравнить статистику</button>
+      <div id="compareResult" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- ВКЛАДКА 5: PRO И РЕФЕРАЛКА -->
+  <div id="tab-pro" class="tab">
+    <div class="card">
+      <div class="card-title">🎁 Пригласи тиммейта — +3 дня Pro</div>
+      <div class="sub">Когда друг перейдёт по твоей ссылке и привяжет свой FACEIT, вы оба автоматически получите +3 дня StatRush Pro.</div>
+      <div class="row">
+        <input id="refLinkInput" type="text" readonly value="Загрузка ссылки..." />
+        <button class="btn secondary" onclick="copyRefLink()">Копия</button>
+      </div>
+      <div id="refStatsText" class="sub" style="margin-top:8px; margin-bottom:0;">Приглашено: 0 · Активировано: 0</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⭐ StatRush Pro</div>
+      <div class="sub">Анализ 20 матчей вместо 5, все скрытые ошибки, Тильт-детектор и полная статистика по всем картам.</div>
+
+      <div class="plan-card">
+        <div>
+          <div style="font-weight:700; font-size:14px;">1 месяц Pro</div>
+          <div style="font-size:12px; color:var(--muted);">30 дней полного доступа</div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn sm" onclick="buyStars('month')">100 ⭐</button>
+          <button class="btn secondary sm" onclick="buyCrypto('month')">$2</button>
+        </div>
+      </div>
+
+      <div class="plan-card best">
+        <div>
+          <div style="font-weight:700; font-size:14px;">3 месяца Pro 🔥</div>
+          <div style="font-size:12px; color:var(--muted);">90 дней · выгода 17%</div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn sm" onclick="buyStars('quarter')">250 ⭐</button>
+          <button class="btn secondary sm" onclick="buyCrypto('quarter')">$5</button>
+        </div>
+      </div>
+
+      <div class="plan-card">
+        <div>
+          <div style="font-weight:700; font-size:14px;">12 месяцев Pro</div>
+          <div style="font-size:12px; color:var(--muted);">365 дней без ограничений</div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn sm" onclick="buyStars('year')">1000 ⭐</button>
+          <button class="btn secondary sm" onclick="buyCrypto('year')">$15</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn active" onclick="switchTab('profile', this)"><span class="nav-ico">🎯</span>Профиль</button>
+    <button class="nav-btn" onclick="switchTab('mistakes', this)"><span class="nav-ico">🧠</span>Ошибки</button>
+    <button class="nav-btn" onclick="switchTab('maps', this)"><span class="nav-ico">🗺️</span>Карты</button>
+    <button class="nav-btn" onclick="switchTab('social', this)"><span class="nav-ico">🕵️</span>Лобби / 1v1</button>
+    <button class="nav-btn" onclick="switchTab('pro', this)"><span class="nav-ico">⭐</span>Pro</button>
+  </nav>
 
   <script>
     const API_BASE = "https://spendly-ffrog0242.mia0.amvera.tech";
-
-    const LEVEL_COLORS = {
-      1: "#9ca3af", 2: "#22c55e", 3: "#22c55e",
-      4: "#eab308", 5: "#eab308", 6: "#eab308", 7: "#eab308",
-      8: "#f97316", 9: "#f97316", 10: "#ef4444"
-    };
-
-    const LEVEL_RANGES = {
-      1: [100, 500], 2: [501, 750], 3: [751, 900], 4: [901, 1050],
-      5: [1051, 1200], 6: [1201, 1350], 7: [1351, 1530], 8: [1531, 1750],
-      9: [1751, 2000], 10: [2001, 3000]
-    };
-
-    const tg = window.Telegram ? window.Telegram.WebApp : null;
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
     if (tg) { tg.ready(); tg.expand(); }
 
-    let currentNick = "";
-
-    function esc(str) {
-      return String(str || "").replace(/[&<>"']/g, s => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
-      }[s]));
-    }
+    let currentData = null;
+    let notifyEnabled = true;
 
     function showToast(msg) {
-      const el = document.getElementById("toast");
-      el.textContent = msg;
-      el.style.display = "block";
-      clearTimeout(window._t);
-      window._t = setTimeout(() => { el.style.display = "none"; }, 2800);
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.style.display = "block";
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => { t.style.display = "none"; }, 3200);
+    }
+
+    function authHeaders() {
+      return {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": tg ? (tg.initData || "") : ""
+      };
     }
 
     function switchTab(name, btn) {
-      document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-      document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".nav-btn").forEach(el => el.classList.remove("active"));
       document.getElementById("tab-" + name).classList.add("active");
       btn.classList.add("active");
     }
 
-    function goToPro() {
-      switchTab("pro", document.getElementById("nav-pro"));
-    }
-
-    function toggleSwitchBox() {
-      const box = document.getElementById("switchBox");
-      box.classList.toggle("hidden");
-      if (!box.classList.contains("hidden")) {
-        document.getElementById("nickInputSwitch").focus();
+    async function initApp() {
+      try {
+        const [meRes, refRes] = await Promise.all([
+          fetch(API_BASE + "/api/me", { headers: authHeaders() }),
+          fetch(API_BASE + "/api/referral", { headers: authHeaders() })
+        ]);
+        const me = await meRes.json();
+        updateProBadge(me.is_pro);
+        if (me.faceit_nick) {
+          document.getElementById("nickInput").value = me.faceit_nick;
+          document.getElementById("cmpNick1").value = me.faceit_nick;
+          loadProfile();
+        }
+        const ref = await refRes.json();
+        if (ref.ref_link) document.getElementById("refLinkInput").value = ref.ref_link;
+        document.getElementById("refStatsText").textContent =
+          `Приглашено: ${ref.total || 0} · Активировано: ${ref.activated || 0} (+${(ref.activated || 0) * 3} дн. Pro)`;
+        notifyEnabled = ref.notify_matches !== false;
+        updateNotifyBtn();
+      } catch (e) {
+        console.error(e);
       }
     }
 
-    function refreshCurrent() {
-      if (currentNick) runAnalysis(currentNick);
-    }
-
-    function updateProBadge(isPro, proUntil) {
-      const badge = document.getElementById("proBadge");
-      const title = document.getElementById("proStatusText");
-      const sub = document.getElementById("proStatusSub");
+    function updateProBadge(isPro) {
+      const b = document.getElementById("planBadge");
       if (isPro) {
-        const dt = proUntil ? new Date(proUntil * 1000).toLocaleDateString("ru-RU") : "";
-        badge.textContent = "Pro ⭐";
-        badge.classList.add("pro");
-        title.textContent = "StatRush Pro активен";
-        sub.textContent = dt ? `Подписка действует до ${dt}.` : "Все Pro-функции открыты.";
+        b.textContent = "PRO";
+        b.classList.add("pro");
       } else {
-        badge.textContent = "Free";
-        badge.classList.remove("pro");
-        title.textContent = "Базовый тариф Free";
-        sub.textContent = "Оплата доступна в Telegram Stars и через Crypto Bot (USD).";
+        b.textContent = "FREE";
+        b.classList.remove("pro");
       }
     }
 
-    async function loadMe(notify) {
-      try {
-        const headers = {};
-        if (tg && tg.initData) headers["X-Telegram-Init-Data"] = tg.initData;
-        const res = await fetch(`${API_BASE}/api/me`, { headers });
-        const data = await res.json();
-        updateProBadge(Boolean(data.is_pro), data.pro_until);
-        const savedNick = data.faceit_nick || localStorage.getItem("statrush_nick") || "";
-        if (savedNick && !currentNick) {
-          document.getElementById("nickInputMain").value = savedNick;
-          runAnalysis(savedNick);
-        }
-        if (notify) showToast(data.is_pro ? "StatRush Pro активен ⭐" : "Тариф Free");
-      } catch (_) {
-        const saved = localStorage.getItem("statrush_nick");
-        if (saved && !currentNick) {
-          document.getElementById("nickInputMain").value = saved;
-          runAnalysis(saved);
-        }
-      }
+    function updateNotifyBtn() {
+      document.getElementById("notifyBtn").textContent = notifyEnabled ? "🔔 Авто-отчёты: ВКЛ" : "🔕 Авто-отчёты: ВЫКЛ";
     }
 
-    async function runAnalysis(rawNick) {
-      const nick = (rawNick || "").trim();
-      if (!nick) return showToast("Введите никнейм FACEIT");
-
-      const b1 = document.getElementById("connectBtn");
-      const b2 = document.getElementById("switchBtn");
-      b1.disabled = true; b2.disabled = true;
-      b1.textContent = "..."; b2.textContent = "...";
-
+    async function loadProfile() {
+      const nick = document.getElementById("nickInput").value.trim();
+      if (!nick) return showToast("Введи никнейм FACEIT");
+      showToast("Загружаю статистику FACEIT...");
       try {
-        const headers = { "Content-Type": "application/json" };
-        if (tg && tg.initData) headers["X-Telegram-Init-Data"] = tg.initData;
-
-        const res = await fetch(`${API_BASE}/api/analyze`, {
+        const res = await fetch(API_BASE + "/api/analyze", {
           method: "POST",
-          headers,
+          headers: authHeaders(),
           body: JSON.stringify({ nickname: nick })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Ошибка загрузки профиля");
+        if (!res.ok) return showToast(data.error || "Ошибка загрузки");
 
-        currentNick = data.player.nickname;
-        localStorage.setItem("statrush_nick", currentNick);
-        document.getElementById("nickInputSwitch").value = "";
-        document.getElementById("switchBox").classList.add("hidden");
-        renderData(data);
-        showToast(`Профиль ${currentNick} загружен`);
-      } catch (err) {
-        showToast(err.message || "Ошибка запроса к FACEIT");
-      } finally {
-        b1.disabled = false; b2.disabled = false;
-        b1.textContent = "Войти"; b2.textContent = "Найти";
+        currentData = data;
+        updateProBadge(data.is_pro);
+        document.getElementById("cmpNick1").value = data.player.nickname;
+        renderProfile(data);
+      } catch (e) {
+        showToast("Ошибка соединения с сервером");
       }
     }
 
-    function renderData(d) {
-      const p = d.player;
-      const s = d.summary;
+    function renderProfile(data) {
+      const pl = data.player, sm = data.summary;
+      document.getElementById("profileContent").style.display = "block";
+      document.getElementById("pAvatar").src = pl.avatar || "https://assets.faceit-cdn.net/frontend/assets/images/default_avatar.png";
+      document.getElementById("pNick").textContent = pl.nickname;
+      document.getElementById("pLvl").textContent = `${pl.level} lvl`;
+      document.getElementById("pElo").textContent = pl.elo_to_next > 0
+        ? `${pl.elo} ELO · до ${pl.next_level} lvl осталось ${pl.elo_to_next}`
+        : `${pl.elo} ELO · Максимальный уровень`;
+      document.getElementById("pImpact").textContent = sm.impact_score;
 
-      document.getElementById("connectCard").classList.add("hidden");
-      document.getElementById("accountHero").classList.remove("hidden");
-      document.getElementById("matchesCard").classList.remove("hidden");
-      document.getElementById("coachEmpty").classList.add("hidden");
-      document.getElementById("coachContent").classList.remove("hidden");
-      document.getElementById("mapsEmpty").classList.add("hidden");
-      document.getElementById("mapsContent").classList.remove("hidden");
-
-      const lvlColor = LEVEL_COLORS[p.level] || "#ff5500";
-      document.documentElement.style.setProperty("--lvl-color", lvlColor);
-
-      document.getElementById("pAvatar").src =
-        p.avatar || "https://distribution.faceit-cdn.net/images/f86c25b1-7151-4a76-82be-c5fb2f77e204.jpeg";
-      document.getElementById("pNick").textContent = p.nickname;
-
-      const countryEl = document.getElementById("pCountry");
-      if (p.country) {
-        countryEl.textContent = p.country;
-        countryEl.classList.remove("hidden");
-      } else {
-        countryEl.classList.add("hidden");
-      }
-
-      document.getElementById("pLevel").textContent = p.level;
-      document.getElementById("pElo").textContent = `${p.elo} ELO`;
-
-      const [minElo, maxElo] = LEVEL_RANGES[p.level] || [100, 2000];
-      const pct = p.level >= 10
-        ? 100
-        : Math.max(8, Math.min(98, Math.round(((p.elo - minElo) / Math.max(1, maxElo - minElo)) * 100)));
-
-      document.getElementById("eloCurLbl").textContent = `Уровень ${p.level}`;
-      document.getElementById("eloNextLbl").textContent = p.level < 10
-        ? `До ${p.next_level} lvl: ${p.elo_to_next} ELO`
-        : "Максимальный 10 lvl";
-      document.getElementById("eloBarFill").style.width = pct + "%";
-
-      document.getElementById("kKd").textContent = s.avg_kd;
-      document.getElementById("kAdr").textContent = s.avg_adr || "—";
-      document.getElementById("kHs").textContent = `${s.avg_hs}%`;
-      document.getElementById("kWr").textContent = `${s.winrate}%`;
-
-      document.getElementById("impactScore").textContent = s.impact_score;
-      document.getElementById("impactRing").style.setProperty("--p", s.impact_score);
-      document.getElementById("scoreSub").textContent = `Анализ последних ${s.total_pool} игр CS2`;
-
-      document.getElementById("matchesTitle").textContent = d.is_pro
-        ? `Последние ${d.matches.length} матчей (Pro)`
-        : `Последние ${d.matches.length} матчей (в Pro доступно 20)`;
+      document.getElementById("sKd").textContent = sm.avg_kd;
+      document.getElementById("sAdr").textContent = sm.avg_adr || "—";
+      document.getElementById("sHs").textContent = sm.avg_hs + "%";
+      document.getElementById("sWr").textContent = sm.winrate + "%";
+      document.getElementById("matchesPoolLbl").textContent = `${sm.matches_analyzed} игр`;
 
       const mList = document.getElementById("matchesList");
-      mList.innerHTML = d.matches.length
-        ? d.matches.map(m => `
-            <div class="match-row">
-              <div class="wl ${m.won ? "win" : "loss"}">${m.won ? "W" : "L"}</div>
-              <div class="m-main">
-                <div class="m-map">${esc(m.map)} · ${esc(m.score)}</div>
-                <div class="m-sub">${m.kills}/${m.assists}/${m.deaths} · HS ${m.hs}%</div>
+      mList.innerHTML = (data.matches || []).map(m => `
+        <div class="match-item">
+          <div>
+            <span class="${m.won ? 'tag-w' : 'tag-l'}">${m.won ? 'W' : 'L'}</span>
+            <strong>${m.map}</strong> <span style="color:var(--muted);">(${m.score})</span>
+          </div>
+          <div style="font-size:12px;">
+            <strong>${m.kills}/${m.deaths}</strong> · K/D <strong>${m.kd}</strong> · ADR <strong>${m.adr || '—'}</strong>
+          </div>
+        </div>
+      `).join("") || `<div class="sub">Нет недавних матчей CS2</div>`;
+
+      // Ошибки и тильт
+      const tilt = data.tilt;
+      document.getElementById("tiltBox").innerHTML = tilt.locked
+        ? `🔒 <strong>Тильт-детектор доступен в Pro</strong> — откроется анализ серий поражений и стоп-лосс.`
+        : `Риск тильта: <strong>${tilt.risk}</strong> (макс. лузстрик: ${tilt.max_loss_streak}). ${tilt.advice}`;
+
+      const errList = document.getElementById("mistakesList");
+      errList.innerHTML = (data.mistakes || []).map(ms => `
+        <div class="mistake ${ms.severity}">
+          <div class="mistake-h">${ms.title}</div>
+          <div class="mistake-m">${ms.metric}</div>
+          <div class="mistake-t">${ms.tip}</div>
+        </div>
+      `).join("") + (data.locked_mistakes_count > 0
+        ? `<div class="sub" style="margin-top:10px;">🔒 Скрыто ещё ошибок: <strong>${data.locked_mistakes_count}</strong> (доступно в StatRush Pro)</div>`
+        : "");
+
+      // Карты
+      const mapsEl = document.getElementById("mapsList");
+      mapsEl.innerHTML = (data.maps || []).map(mp => `
+        <div class="match-item">
+          <div><strong>${mp.map}</strong> <span style="color:var(--muted);">(${mp.matches} игр)</span></div>
+          <div><strong style="color:${mp.winrate >= 50 ? 'var(--green)' : 'var(--red)'}">${mp.winrate}% WR</strong> · K/D ${mp.kd}</div>
+        </div>
+      `).join("") + (data.locked_maps_count > 0
+        ? `<div class="sub" style="margin-top:10px;">🔒 Ещё карт в пуле: <strong>${data.locked_maps_count}</strong> (доступно в Pro)</div>`
+        : "");
+    }
+
+    async function sendPngCard() {
+      const nick = document.getElementById("nickInput").value.trim();
+      showToast("Генерирую PNG-карточку и отправляю в чат...");
+      try {
+        const res = await fetch(API_BASE + "/api/send-card", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ nickname: nick })
+        });
+        const data = await res.json();
+        if (!res.ok) return showToast(data.error || "Не удалось отправить карточку");
+        showToast("✅ PNG-карточка отправлена тебе в чат с ботом!");
+      } catch (e) {
+        showToast("Ошибка отправки карточки");
+      }
+    }
+
+    async function toggleNotify() {
+      try {
+        const res = await fetch(API_BASE + "/api/toggle-notify", {
+          method: "POST",
+          headers: authHeaders()
+        });
+        const data = await res.json();
+        if (!res.ok) return showToast(data.error || "Ошибка");
+        notifyEnabled = data.notify_matches;
+        updateNotifyBtn();
+        showToast(notifyEnabled ? "🔔 Авто-отчёты после матчей включены" : "🔕 Авто-отчёты выключены");
+      } catch (e) {
+        showToast("Ошибка переключения");
+      }
+    }
+
+    async function scoutLobby(useLastMatch) {
+      const url = useLastMatch ? "" : document.getElementById("lobbyInput").value.trim();
+      if (!useLastMatch && !url) return showToast("Вставь ссылку на комнату матча FACEIT");
+      const box = document.getElementById("lobbyResult");
+      box.innerHTML = `<div class="sub">🔍 Сканирую 5 соперников и их пул карт...</div>`;
+      try {
+        const res = await fetch(API_BASE + "/api/lobby-scout", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ match_url: url })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          box.innerHTML = "";
+          return showToast(data.error || "Не удалось просканировать лобби");
+        }
+
+        const bansHtml = (data.ban_maps || []).map(m => `<span class="pill-warn">🚫 Бан: ${m.map} (${m.winrate}%)</span>`).join("");
+        const picksHtml = (data.pick_maps || []).map(m => `<span class="pill-ok">✅ Пик: ${m.map} (${m.winrate}%)</span>`).join("");
+
+        box.innerHTML = `
+          <div style="margin-bottom:8px;">${bansHtml} ${picksHtml}</div>
+          <div class="sub" style="margin-bottom:6px;">
+            ⚠️ Главный керри: <strong>${data.carry}</strong>
+            ${data.tilted ? ` · 🎯 На тильте: <strong>${data.tilted}</strong>` : ""}
+          </div>
+          ${(data.players || []).map(p => `
+            <div class="match-item">
+              <div>
+                <strong>${p.nickname}</strong>
+                <span style="color:var(--muted); font-size:11.5px;">(${p.level} lvl · ${p.elo || '—'} ELO)</span>
               </div>
-              <div class="m-stats">
-                <div>K/D ${m.kd}</div>
-                <div class="m-sub">ADR ${m.adr || "—"}</div>
+              <div style="font-size:12px;">
+                K/D <strong>${p.kd}</strong> · ADR <strong>${p.adr || '—'}</strong>
+                ${p.win_streak >= 3 ? ` 🔥${p.win_streak}W` : p.loss_streak >= 2 ? ` 🧊${p.loss_streak}L` : ""}
               </div>
             </div>
-          `).join("")
-        : '<div class="note">Недавние матчи CS2 не найдены.</div>';
-
-      document.getElementById("mistakesList").innerHTML = d.mistakes.map(ms => `
-        <div class="mistake ${esc(ms.severity)}">
-          <div class="mistake-title">${esc(ms.title)}</div>
-          <div class="mistake-metric">${esc(ms.metric)}</div>
-          <div class="mistake-tip">${esc(ms.tip)}</div>
-        </div>
-      `).join("");
-
-      const mLock = document.getElementById("mistakesLock");
-      if (d.locked_mistakes_count > 0) {
-        mLock.classList.remove("hidden");
-        document.getElementById("mistakesLockText").textContent = `Скрыто ещё ошибок: ${d.locked_mistakes_count}`;
-      } else {
-        mLock.classList.add("hidden");
+          `).join("")}
+        `;
+      } catch (e) {
+        box.innerHTML = "";
+        showToast("Ошибка скаута лобби");
       }
+    }
 
-      const tiltEl = document.getElementById("tiltBlock");
-      tiltEl.innerHTML = d.tilt.locked
-        ? `<div class="note">Тильт-детектор доступен в <b>StatRush Pro</b>.</div><button class="btn glass" style="margin-top:10px;" onclick="goToPro()">Разблокировать в Pro ⭐</button>`
-        : `<div style="font-size:15px;font-weight:700;margin-bottom:5px;">Риск тильта: ${esc(d.tilt.risk)}</div><div class="note">${esc(d.tilt.advice)}</div>`;
-
-      const vetoEl = document.getElementById("vetoAdvice");
-      vetoEl.innerHTML = (d.best_map && d.worst_map)
-        ? `Сильнее всего идёт <b>${esc(d.best_map.map)}</b> (${d.best_map.winrate}% WR). Первый бан на вето: <b>${esc(d.worst_map.map)}</b> (${d.worst_map.winrate}% WR).`
-        : "Недостаточно матчей на разных картах для расчёта вето.";
-
-      const mapsList = document.getElementById("mapsList");
-      mapsList.innerHTML = d.maps.length
-        ? d.maps.map(mp => {
-            const cls = mp.winrate >= 55 ? "" : (mp.winrate >= 45 ? "mid" : "bad");
+    async function comparePlayers() {
+      const nick1 = document.getElementById("cmpNick1").value.trim();
+      const nick2 = document.getElementById("cmpNick2").value.trim();
+      if (!nick1 || !nick2) return showToast("Введи оба никнейма");
+      const box = document.getElementById("compareResult");
+      box.innerHTML = `<div class="sub">⚔️ Сравниваю игроков...</div>`;
+      try {
+        const res = await fetch(API_BASE + "/api/compare", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ nick1, nick2 })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          box.innerHTML = "";
+          return showToast(data.error || "Ошибка сравнения");
+        }
+        const a = data.left, b = data.right;
+        const rows = [
+          ["ELO", a.player.elo, b.player.elo],
+          ["Impact Score", a.summary.impact_score, b.summary.impact_score],
+          ["K/D", a.summary.avg_kd, b.summary.avg_kd],
+          ["ADR", a.summary.avg_adr || 0, b.summary.avg_adr || 0],
+          ["Winrate %", a.summary.winrate, b.summary.winrate]
+        ];
+        box.innerHTML = `
+          <div style="display:flex; justify-content:space-between; font-weight:800; font-size:14px; margin-bottom:6px;">
+            <span style="color:var(--accent);">${a.player.nickname} (${a.player.level} lvl)</span>
+            <span style="color:var(--blue);">${b.player.nickname} (${b.player.level} lvl)</span>
+          </div>
+          ${rows.map(([label, va, vb]) => {
+            const sum = (Number(va) + Number(vb)) || 1;
+            const pct = Math.max(15, Math.min(85, Math.round((Number(va) / sum) * 100)));
             return `
-              <div class="map-row">
-                <div class="map-head">
-                  <span>${esc(mp.map)} (${mp.matches} игр)</span>
-                  <span>${mp.winrate}% WR · K/D ${mp.kd}</span>
-                </div>
-                <div class="bar-bg"><div class="bar-fill ${cls}" style="width:${mp.winrate}%"></div></div>
+              <div class="cmp-row">
+                <div class="cmp-top"><span>${va}</span><span style="color:var(--muted);">${label}</span><span>${vb}</span></div>
+                <div class="cmp-bar"><div class="cmp-l" style="width:${pct}%"></div><div class="cmp-r" style="width:${100 - pct}%"></div></div>
               </div>
             `;
-          }).join("")
-        : '<div class="note">Недостаточно данных по картам.</div>';
-
-      const mapLock = document.getElementById("mapsLock");
-      if (d.locked_maps_count > 0) {
-        mapLock.classList.remove("hidden");
-        document.getElementById("mapsLockText").textContent = `Скрыто ещё карт: ${d.locked_maps_count}`;
-      } else {
-        mapLock.classList.add("hidden");
+          }).join("")}
+        `;
+      } catch (e) {
+        box.innerHTML = "";
+        showToast("Ошибка сравнения");
       }
     }
 
-    async function buyPlan(planKey, btn) {
-      if (!tg || !tg.initData) return showToast("Откройте приложение внутри Telegram для оплаты Stars");
-      const orig = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = "...";
-      try {
-        const res = await fetch(`${API_BASE}/api/create-invoice`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Telegram-Init-Data": tg.initData },
-          body: JSON.stringify({ plan: planKey })
-        });
-        const data = await res.json();
-        if (!res.ok || !data.invoice_url) throw new Error(data.error || "Ошибка счёта");
-        tg.openInvoice(data.invoice_url, (status) => {
-          if (status === "paid") {
-            showToast("Оплата прошла! Активируем Pro...");
-            setTimeout(() => { loadMe(true); if (currentNick) runAnalysis(currentNick); }, 1500);
-          } else if (status === "cancelled") {
-            showToast("Оплата отменена");
-          }
-        });
-      } catch (err) {
-        showToast(err.message || "Ошибка оплаты");
-      } finally {
-        btn.disabled = false;
-        btn.textContent = orig;
-      }
+    function copyRefLink() {
+      const inp = document.getElementById("refLinkInput");
+      inp.select();
+      navigator.clipboard?.writeText(inp.value);
+      showToast("✅ Реферальная ссылка скопирована!");
     }
 
-    async function buyCryptoPlan(planKey, btn) {
-      if (!tg || !tg.initData) return showToast("Откройте приложение внутри Telegram для оплаты через Crypto Bot");
-      const orig = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = "...";
+    async function buyStars(plan) {
       try {
-        const res = await fetch(`${API_BASE}/api/create-crypto-invoice`, {
+        const res = await fetch(API_BASE + "/api/create-invoice", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "X-Telegram-Init-Data": tg.initData },
-          body: JSON.stringify({ plan: planKey })
+          headers: authHeaders(),
+          body: JSON.stringify({ plan })
         });
         const data = await res.json();
-        if (!res.ok || !data.pay_url) throw new Error(data.error || "Ошибка счёта Crypto Bot");
-
-        if (tg.openLink) tg.openLink(data.pay_url);
-        else window.open(data.pay_url, "_blank");
-
-        showToast(`Счёт на $${data.usd} открыт в Crypto Bot`);
-
-        if (data.invoice_id) {
-          for (let i = 0; i < 6; i++) {
-            await new Promise(r => setTimeout(r, 4000));
-            const chk = await fetch(
-              `${API_BASE}/api/check-crypto-invoice?invoice_id=${encodeURIComponent(data.invoice_id)}`,
-              { headers: { "X-Telegram-Init-Data": tg.initData } }
-            );
-            const chkData = await chk.json();
-            if (chkData.is_pro) {
-              updateProBadge(true, chkData.pro_until);
-              if (currentNick) runAnalysis(currentNick);
-              showToast("Оплата через Crypto Bot подтверждена! Pro активен ⭐");
-              break;
+        if (!res.ok || !data.invoice_url) return showToast(data.error || "Ошибка счёта Stars");
+        if (tg && tg.openInvoice) {
+          tg.openInvoice(data.invoice_url, status => {
+            if (status === "paid") {
+              showToast("🎉 StatRush Pro активирован!");
+              initApp();
             }
-          }
+          });
+        } else {
+          window.open(data.invoice_url, "_blank");
         }
-      } catch (err) {
-        showToast(err.message || "Ошибка Crypto Bot");
-      } finally {
-        btn.disabled = false;
-        btn.textContent = orig;
+      } catch (e) {
+        showToast("Ошибка оплаты Stars");
       }
     }
 
-    loadMe(false);
+    async function buyCrypto(plan) {
+      try {
+        const res = await fetch(API_BASE + "/api/create-crypto-invoice", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ plan })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.pay_url) return showToast(data.error || "Crypto Bot не настроен");
+        if (tg && tg.openTelegramLink) tg.openTelegramLink(data.pay_url);
+        else window.open(data.pay_url, "_blank");
+      } catch (e) {
+        showToast("Ошибка Crypto Bot");
+      }
+    }
+
+    initApp();
   </script>
 </body>
 </html>
